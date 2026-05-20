@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Koha Ebook Importer
+Koha BOOD Ebook Importer
 ==================
-Outil graphique de gestion de l'import d'ebooks dans le catalogue Koha.
+Outil graphique de gestion de l'import d'ebooks BOOD dans le catalogue Koha.
 
 Fonctionnalités principales :
 - Import de fichiers UNIMARC ISO2709 (UTF-8)
@@ -33,7 +33,7 @@ from app import KohaEbookApp
 def main():
     """Point d'entrée principal de l'application."""
     root = tk.Tk()
-    root.title("Koha Ebook Manager")
+    root.title("Koha BOOD Ebook Importer")
     root.minsize(1100, 650)
 
     # Centrage de la fenêtre au démarrage
