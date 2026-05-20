@@ -559,36 +559,17 @@ def add_zones_105_135(record: MarcRecord) -> None:
         record.add_field(field)
 
 
-def add_note_330_source(record: MarcRecord) -> None:
+def move_330_to_349(record: MarcRecord) -> None:
     """
-    Déplace le résumé source (330$a) en zone 349 avec un $2 indiquant
-    la provenance, au lieu de modifier la 330.
+    Déplace le résumé source (330$a) en zone 349.
 
     La zone 349 est une zone locale bibliothèque utilisée pour les résumés
     issus de sources externes (fournisseur, OAI…). La zone 330 est ainsi
     réservée aux résumés issus du Sudoc (récupérés via MARC).
-
-    Si une zone 330 existe dans la notice source :
-      - Son $a est copié dans une nouvelle zone 349$a.
-      - Un $2 "site du fournisseur" est ajouté à la 349.
-      - La zone 330 originale est supprimée.
-
-    Ne fait rien si aucune zone 330 n'est présente.
     """
-    zones_330 = record.get_fields("330")
-    if not zones_330:
-        return
-
-    for zone_330 in zones_330:
-        texte = zone_330.get_subfield("a") or ""
-        if texte.strip():
-            zone_349 = MarcField(tag="349", ind1=" ", ind2=" ")
-            zone_349.add_subfield("a", texte.strip())
-            zone_349.add_subfield("2", "site du fournisseur")
-            record.add_field(zone_349)
-
-    record.remove_fields("330")
-
+    for field in record.fields:
+        if field.tag == "330":
+            field.tag = "349"
 
 def detect_platform(record: MarcRecord) -> str:
     """
@@ -909,7 +890,7 @@ def prepare_record_for_koha(
       -- Zones normalisees ---------------------------------------------------
       14. Zones RDA 181, 182, 183
       15. Zones codees 105, 135
-      16. Résumé source 330 → 349 avec $2 "site du fournisseur" (330 supprimée)
+      16. Conversion Résumé source 330 → 349 avec $2 "site du fournisseur"
       17. Conversion 856 jackets -> 859
       18. Detection plateforme (856) + analyse licence (917)
       19. Zone 371$a (note d'acces enrichie avec plateforme et conditions)
@@ -965,7 +946,7 @@ def prepare_record_for_koha(
     # -- Zones normalisees ---------------------------------------------------
     add_zones_181_182_183(prepared)
     add_zones_105_135(prepared)
-    add_note_330_source(prepared)
+    move_330_to_349(prepared)
 
     # Conversion jackets -> 859 EN PREMIER (avant detect_platform et propagation)
     # pour que les 856 restants soient bien les liens d'acces au document.
