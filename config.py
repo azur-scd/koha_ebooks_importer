@@ -55,6 +55,22 @@ ZONE_801 = {
     "b": "biblioondemand",
 }
 
+ZONE_830_UNIMARC = {
+    "a": "Notice UNIMARC biblioondemand",
+}
+
+ZONE_830_UNIMARC_ET_DC = {
+    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN et liens)",
+}
+
+ZONE_830_UNIMARC_ET_DC_ET_SUDOC_PAPIER = {
+    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN et liens) + enrichissement Sudoc (notice papier PPN {ppn})",
+}
+
+ZONE_830_UNIMARC_ET_DC_ET_SUDOC_EBOOK = {
+    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN et liens) + enrichissement Sudoc (notice ebook PPN {ppn})",
+}
+
 # ---------------------------------------------------------------------------
 # Paramètres OAI-PMH
 # ---------------------------------------------------------------------------

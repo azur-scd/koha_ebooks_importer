@@ -24,7 +24,7 @@ import re
 from datetime import date, datetime
 from typing import List, Optional
 
-from config import ZONE_099, ZONE_995, ZONE_801, BARCODE_PREFIX
+from config import ZONE_099, ZONE_995, ZONE_801, ZONE_830_UNIMARC, BARCODE_PREFIX
 from marc.reader import MarcField, MarcRecord, SubField
 
 
@@ -803,6 +803,22 @@ def add_zone_801(record: MarcRecord) -> None:
 
     record.add_field(field)
 
+def add_zone_830(record: MarcRecord) -> None:
+    """
+    Ajoute la zone 830 (note de catalogage) a la notice.
+
+    """
+    record.fields = [
+        f for f in record.fields
+        if not (f.tag == "830")
+    ]
+
+    field = MarcField(tag="830", ind1=" ", ind2=" ")
+    for code, value in ZONE_830_UNIMARC.items():
+        field.add_subfield(code, value)
+
+    record.add_field(field)
+
 
 def add_zone_995(
     record: MarcRecord,
@@ -899,7 +915,8 @@ def prepare_record_for_koha(
       21. Copie 001 -> 039$a
       22. Zone 099 (type document)
       23. Zone 801 (source catalogage)
-      24. Zone 995 (exemplaire / code-barres + note en $z)
+      24. Zone 830 (note de catalogage)
+      25. Zone 995 (exemplaire / code-barres + note en $z)
 
     Args:
         record      : Notice source (non modifiee).
@@ -966,6 +983,7 @@ def prepare_record_for_koha(
     copy_001_to_039a(prepared)
     add_zone_099(prepared, today=timestamp.date())
     add_zone_801(prepared)
+    add_zone_830(prepared)
     # La note est passee a add_zone_995 pour etre copiee en 995$z
     add_zone_995(prepared, order_index=order_index, timestamp=timestamp,
                  note_acces=note_acces)
