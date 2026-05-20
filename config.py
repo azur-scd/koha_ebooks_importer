@@ -84,26 +84,30 @@ def _all_856_urls(record: "MarcRecord") -> str:
 
 
 def _856_doc_url(record: "MarcRecord") -> str:
-    """URL du 856 d'accès au document (sans $x vignette)."""
+    """URL du 1er 856 d'accès au document (sans $x vignette)."""
     for f in record.fields:
         if f.tag == "856":
-            x = (f.get_subfield("x") or "").strip().lower()
+            x = (f.get_subfield("x") or "").strip()
             if x != "vignette":
                 return f.get_subfield("u") or ""
     return ""
 
 
 def _856_cover_url(record: "MarcRecord") -> str:
-    """URL du 856 de couverture ($x = vignette) ou 859."""
+    """URL du 1er 856 de couverture ($x = vignette)."""
     for f in record.fields:
         if f.tag == "856":
-            x = (f.get_subfield("x") or "").strip().lower()
+            x = (f.get_subfield("x") or "").strip()
             if x == "vignette":
                 return f.get_subfield("u") or ""
+    return ""
+
+def _859_cover_url(record: "MarcRecord") -> str:
+    """URL du 1er 859 de couverture."""
+    for f in record.fields:
         if f.tag == "859":
             return f.get_subfield("u") or ""
     return ""
-
 
 # ---------------------------------------------------------------------------
 # Colonnes du tableau "Données source"
@@ -125,24 +129,29 @@ SOURCE_COLUMNS = [
         "width":   120, "stretch": False,
     },
     {
-        "label":   "Titre",
+        "label":   "Titre (220$a)",
         "extract": lambda r: r.get_value("200", "a"),
         "width":   220, "stretch": True,
     },
     {
-        "label":   "Éditeur",
+        "label":   "Éditeur (210/214$c)",
         "extract": lambda r: r.get_value("210", "c") or r.get_value("214", "c"),
         "width":   130, "stretch": False,
     },
     {
-        "label":   "Date",
+        "label":   "Date (210/214$d)",
         "extract": lambda r: r.get_value("210", "d") or r.get_value("214", "d"),
         "width":    70, "stretch": False,
     },
     {
-        "label":   "URLs",
-        "extract": _all_856_urls,
-        "width":   250, "stretch": True,
+        "label":   "URL doc (856)",
+        "extract": _856_doc_url,
+        "width":   200, "stretch": True,
+    },
+    {
+        "label":   "URL couv (856 vignette)",
+        "extract": _856_cover_url,
+        "width":   200, "stretch": True,
     },
 ]
 
@@ -166,7 +175,7 @@ PREPARED_COLUMNS = [
         "width":   120, "stretch": False,
     },
     {
-        "label":   "Titre",
+        "label":   "Titre (200$a)",
         "extract": lambda r: r.get_value("200", "a"),
         "width":   220, "stretch": True,
     },

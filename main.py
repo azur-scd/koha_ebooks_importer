@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Koha Ebook Manager
+Koha Ebook Importer
 ==================
 Outil graphique de gestion de l'import d'ebooks dans le catalogue Koha.
 
