@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-marc/sudoc_marc_fetcher.py — Récupération et intégration des notices MARC Sudoc
+marc/sudoc_marc_fetcher.py — Récupération et intégration des notices UNIMARC Sudoc
 ================================================================================
 Ce module fournit les fonctions nécessaires pour :
 
@@ -21,7 +21,7 @@ Ce module fournit les fonctions nécessaires pour :
   4. Remplacer dans la notice locale les zones listées dans SUDOC_REPLACE_TAGS
      par celles de la notice Sudoc (la notice Sudoc fait autorité).
 
-  5. Convertir la zone 215 (description matérielle) en note 307 pour les ebooks.
+  5. Convertir la zone 215 (description matérielle) en note 307.
 
 Pour étendre :
   - Modifier SUDOC_REPLACE_TAGS pour ajouter/retirer des zones à remplacer.

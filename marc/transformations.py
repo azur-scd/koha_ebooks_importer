@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-marc/transformations.py — Enrichissements et nettoyages des notices pour Koha
+marc/transformations.py — Enrichissement et nettoyage des notices UNIMARC importées
 ==============================================================================
 Ce module contient toutes les transformations appliquées aux notices MARC
-avant leur import dans Koha.
+en vue de leur import dans Koha et avant les éventuels enrichissement par 
+la notice en Dublin Core et la notice Sudoc.
 
 Chaque transformation est une fonction autonome qui reçoit un MarcRecord
 (et éventuellement des paramètres) et le modifie en place.
