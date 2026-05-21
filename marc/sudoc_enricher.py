@@ -24,14 +24,12 @@ Pour étendre :
 """
 
 from __future__ import annotations
-
 import json
 import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional
-
 from marc.reader import MarcRecord
 
 # ---------------------------------------------------------------------------
@@ -196,6 +194,35 @@ def _append_ppn_to_801(record: MarcRecord, ppn: str) -> None:
     if mention not in current_b:
         zone_801.set_subfield("b", current_b + mention)
 
+# ---------------------------------------------------------------------------
+# Enrichissement de la zone 830$a
+# ---------------------------------------------------------------------------
+
+def _append_ppn_to_830(record: MarcRecord, ppn: str) -> None:
+    """
+    Ajoute la mention PPN dans le 830$a de la notice.
+
+    Format ajouté : " ; enrichi par PPN Sudoc <ppn>"
+    Si la zone 830 n'existe pas, elle est créée avec juste la mention.
+    """
+    zone_830 = None
+    for f in record.fields:
+        if f.tag == "830":
+            zone_830 = f
+            break
+
+    if zone_830 is None:
+        zone_830 = MarcField(tag="830", ind1=" ", ind2=" ")
+        record.add_field(zone_830)
+
+    current_a = zone_830.get_subfield("a") or ""
+    mention   = f" ; enrichi par PPN Sudoc {ppn}"
+
+    # Éviter les doublons si l'enrichissement est relancé
+    if mention not in current_a:
+        zone_830.set_subfield("b", current_a + mention)
+
+
 
 # ---------------------------------------------------------------------------
 # Orchestrateur principal
@@ -310,9 +337,10 @@ def enrich_with_sudoc(
             if best_ppn and best_ppn != ppn:
                 detail.ppn = best_ppn
 
-            _append_ppn_to_801(record, detail.ppn)
-
             if sudoc_rec is not None:
+                print (detail.ppn)
+                _append_ppn_to_801(record, detail.ppn)
+                _append_ppn_to_830(record, detail.ppn)
                 tags_replaced = replace_fields_from_sudoc(record, sudoc_rec)
                 if convert_215_to_307(record, sudoc_rec):
                     tags_replaced.append("215→307")

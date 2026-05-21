@@ -41,7 +41,7 @@ class KohaEbookApp:
     """
     Contrôleur principal (pattern MVC simplifié).
 
-    Modèle     : self._records (bruts) + self._prepared (enrichis)
+    Modèle     : self._records (bruts) + self._prepared (enrichis) + self._oai_enriched + self._sudoc_enriched 
     Vue        : self._view (MainWindow)
     Contrôleur : cette classe
     """
@@ -56,7 +56,8 @@ class KohaEbookApp:
         self._oai_records: List[OaiRecord]  = []   # Notices Dublin Core collectées
         self._match_result:  Optional[MatchResult]      = None
         self._enrich_result: Optional[EnrichmentReport] = None
-        self._crossed:       List[MarcRecord]            = []   # Notices après croisement OAI
+        self._oai_enriched:       List[MarcRecord]            = []   # Notices après croisement OAI
+        self._sudoc_enriched:    List[MarcRecord] = []
         self._sudoc_report:  Optional[SudocEnrichmentReport] = None
 
         # --- Vue ---
@@ -366,12 +367,12 @@ class KohaEbookApp:
             # Enrichissement sur des CLONES — self._prepared n'est pas modifié
             self._view.set_status("Enrichissement des notices appariées…", level="info")
             self._root.update_idletasks()
-            self._crossed = [rec.clone() for rec in self._prepared]
+            self._oai_enriched = [rec.clone() for rec in self._prepared]
             self._enrich_result = enrich_prepared_records(
-                self._crossed, self._match_result
+                self._oai_enriched, self._match_result
             )
             # Afficher les données croisées dans leur onglet dédié uniquement
-            self._view.load_crossed_records(self._crossed)
+            self._view.load_oai_enriched_records(self._oai_enriched)
 
             self._view.update_stat("matched", n_matched)
             self._view.set_status(
@@ -472,14 +473,14 @@ class KohaEbookApp:
         Le thread de travail communique avec le thread UI via root.after(),
         qui est la seule méthode thread-safe pour mettre à jour Tkinter.
         """
-        if not self._prepared:
+        if not self._oai_enriched:
             messagebox.showwarning(
                 "Données manquantes",
                 "Veuillez d'abord préparer les notices avant de lancer l'enrichissement Sudoc.",
             )
             return
 
-        n = len(self._prepared)
+        n = len(self._oai_enriched)
         confirm = messagebox.askyesno(
             "Enrichissement Sudoc",
             f"{n} notice(s) à traiter.\n\n"
@@ -496,7 +497,7 @@ class KohaEbookApp:
             self._view.set_button_enabled(key, False)
 
         self._view.set_status("Enrichissement Sudoc en cours…", level="info")
-
+        
         def _update_progress(n_done: int, n_total: int) -> None:
             """Appelé depuis le thread UI via root.after — thread-safe."""
             n_found_so_far = sum(
@@ -518,7 +519,7 @@ class KohaEbookApp:
             """Travail réseau dans le thread de fond."""
             try:
                 self._sudoc_report = enrich_with_sudoc(
-                    self._prepared,
+                    self._oai_enriched,
                     progress_cb=_progress_cb,
                 )
                 self._root.after(0, _on_success)
@@ -530,9 +531,13 @@ class KohaEbookApp:
             rep = self._sudoc_report
 
             self._view.update_stat("sudoc", rep.n_found)
-            self._view.load_prepared_records(self._prepared)
+            
+           
+## FIXME Quid si pas d'enrichissement OAI?
+            self._sudoc_enriched = [rec.clone() for rec in self._oai_enriched]
+#            self._view.load_prepared_records(self._sudoc_enriched)
             # Afficher les données enrichies dans l'onglet dédié
-            self._view.load_sudoc_records(self._prepared)
+            self._view.load_sudoc_records(self._sudoc_enriched)
 
             self._view.set_status(
                 f"Enrichissement Sudoc terminé : {rep.n_found} PPN trouvé(s), "
@@ -610,14 +615,15 @@ class KohaEbookApp:
         self._oai_records  = []
         self._match_result  = None
         self._enrich_result = None
-        self._crossed       = []
+        self._oai_enriched       = []
+        self._sudoc_enriched       = []
         self._sudoc_report  = None
 
         # Vider les tableaux
         self._view.load_records([])
         self._view.reset_prepared_tab()
         self._view.reset_oai_tab()
-        self._view.reset_crossed_tab()
+        self._view.reset_oai_enriched_tab()
         self._view.reset_sudoc_tab()
 
         # Remettre les compteurs et l'état

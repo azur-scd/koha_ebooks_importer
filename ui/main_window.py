@@ -393,7 +393,7 @@ class MainWindow:
 
     # ── Onglet croisement OAI ──────────────────────────────────────────
 
-    def load_crossed_records(self, records: List[MarcRecord]) -> None:
+    def load_oai_enriched_records(self, records: List[MarcRecord]) -> None:
         """
         Charge les notices après croisement UNIMARC/OAI dans l'onglet dédié.
         Bascule sur cet onglet au premier appel.
@@ -405,7 +405,7 @@ class MainWindow:
         self._table_crossed.load_records(records)
         self._notebook.select(3)
 
-    def reset_crossed_tab(self) -> None:
+    def reset_oai_enriched_tab(self) -> None:
         """Vide l'onglet croisement et réaffiche le placeholder."""
         if self._crossed_table_visible:
             self._table_crossed.pack_forget()
