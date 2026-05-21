@@ -60,15 +60,15 @@ ZONE_830_UNIMARC = {
 }
 
 ZONE_830_UNIMARC_ET_DC = {
-    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN et liens)",
+    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN, liens, résumé)",
 }
 
 ZONE_830_UNIMARC_ET_DC_ET_SUDOC_PAPIER = {
-    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN et liens) + enrichissement Sudoc (notice papier PPN {ppn})",
+    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN, liens, résumé) + enrichissement Sudoc (notice papier PPN {ppn})",
 }
 
 ZONE_830_UNIMARC_ET_DC_ET_SUDOC_EBOOK = {
-    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN et liens) + enrichissement Sudoc (notice ebook PPN {ppn})",
+    "a": "Notice UNIMARC biblioondemand + enrichissement par Dublin Core (EAN, liens, résumé) + enrichissement Sudoc (notice ebook PPN {ppn})",
 }
 
 # ---------------------------------------------------------------------------

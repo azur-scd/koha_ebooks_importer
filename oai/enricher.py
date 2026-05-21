@@ -27,6 +27,8 @@ modifiées.
 Pour étendre :
   - Ajouter d'autres champs à enrichir en créant une fonction _enrich_xxx()
     et en l'appelant depuis enrich_prepared_records().
+    
+FIXME supprimer les fallback?
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ from typing import List
 from marc.reader import MarcField, MarcRecord
 from oai.harvester import OaiRecord
 from oai.matcher import MatchResult
+from config import ZONE_830_UNIMARC_ET_DC
 
 
 # ---------------------------------------------------------------------------
@@ -194,6 +197,15 @@ def _enrich_resume(marc: MarcRecord, oai: OaiRecord) -> bool:
     marc.add_field(zone_349)
     return True
 
+def _enrich_830(marc: MarcRecord, oai: OaiRecord) -> bool:
+    """
+    Remplace la zone 830 (note de catalogage).
+    """
+    marc.remove_fields("830")
+    for code, value in ZONE_830_UNIMARC_ET_DC.items():
+        field.add_subfield(code, value)
+    marc.add_field(field)
+    return
 
 # ---------------------------------------------------------------------------
 # Orchestrateur
@@ -246,6 +258,7 @@ def enrich_prepared_records(
         ))
         if changed_fields:
             report.n_enriched += 1
+            _enrich_830(marc, oai_rec)
 
     return report
 
