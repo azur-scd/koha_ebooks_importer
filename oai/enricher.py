@@ -202,6 +202,7 @@ def _enrich_830(marc: MarcRecord, oai: OaiRecord) -> bool:
     Remplace la zone 830 (note de catalogage).
     """
     marc.remove_fields("830")
+    field = MarcField(tag="830", ind1=" ", ind2=" ")
     for code, value in ZONE_830_UNIMARC_ET_DC.items():
         field.add_subfield(code, value)
     marc.add_field(field)
