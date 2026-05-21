@@ -10,12 +10,9 @@ enrichit certaines données UNIMARC avec celles issues du Dublin Core OAI :
      contient un identifiant ISBN (préfixe "ISBN:" ou format EAN-13 978/979).
      Le champ EAN (073$a) n'est jamais modifié.
 
-  2. Lien d'accès (856$u) : remplacé par dc:identifier HTTP (convention
-     biblioondemand). Fallback sur dc:relation si dc:identifier ne contient
-     pas d'URL HTTP.
+  2. Lien d'accès (856$u) : remplacé par dc:identifier HTTP
 
-  3. Lien de couverture (859$u) : remplacé par dc:relation HTTP (convention
-     biblioondemand). Conservé si aucune URL n'est trouvée côté OAI.
+  3. Lien de couverture (859$u) : remplacé par dc:relation HTTP
 
   4. Résumé (349$a) : dc:description copié dans une zone 349 locale avec
      $2 "oai-pmh biblioondemand". Ajouté en plus des 349 existantes.
@@ -28,7 +25,6 @@ Pour étendre :
   - Ajouter d'autres champs à enrichir en créant une fonction _enrich_xxx()
     et en l'appelant depuis enrich_prepared_records().
     
-FIXME supprimer les fallback?
 """
 
 from __future__ import annotations
@@ -79,16 +75,10 @@ def _extract_access_url_from_oai(oai: OaiRecord) -> str:
       dc:identifier HTTP → URL d'accès au document (lien de consultation)
       dc:relation HTTP   → URL de couverture (image)
 
-    On cherche donc en priorité dans dc:identifier, puis en fallback dans
-    dc:relation pour les URLs qui ne ressemblent pas à une couverture.
     """
     for val in oai.get("identifier"):
         val = val.strip()
         if _is_http_url(val):
-            return val
-    for val in oai.get("relation"):
-        val = val.strip()
-        if _is_http_url(val) and not _looks_like_cover(val):
             return val
     return ""
 
@@ -100,16 +90,10 @@ def _extract_cover_url_from_oai(oai: OaiRecord) -> str:
     Convention biblioondemand :
       dc:relation HTTP → URL de couverture (image liée au document)
 
-    Fallback : dc:identifier HTTP dont l'URL contient un mot-clé de couverture
-    (jacket, cover, thumb, image, couverture, medias).
     """
     for val in oai.get("relation"):
         val = val.strip()
         if _is_http_url(val):
-            return val
-    for val in oai.get("identifier"):
-        val = val.strip()
-        if _is_http_url(val) and _looks_like_cover(val):
             return val
     return ""
 
@@ -117,11 +101,6 @@ def _extract_cover_url_from_oai(oai: OaiRecord) -> str:
 def _is_http_url(val: str) -> bool:
     return val.startswith("http://") or val.startswith("https://")
 
-
-def _looks_like_cover(url: str) -> bool:
-    lower = url.lower()
-    return any(kw in lower for kw in
-               ("jacket", "cover", "thumb", "image", "couverture", "medias"))
 
 
 # ---------------------------------------------------------------------------
