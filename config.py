@@ -232,7 +232,7 @@ PREPARED_COLUMNS = [
     },
     {
         "label":   "Note catalogage (830$a)",
-        "extract": lambda r: r.get_value("801", "a"),
+        "extract": lambda r: r.get_value("830", "a"),
         "width":   200, "stretch": False,
     },
 ]
