@@ -103,7 +103,7 @@ def _856_doc_url(record: "MarcRecord") -> str:
     """URL du 1er 856 d'accès au document (sans $x vignette)."""
     for f in record.fields:
         if f.tag == "856":
-            x = (f.get_subfield("x") or "").strip()
+            x = (f.get_subfield("x") or "").strip().lower()
             if x != "vignette":
                 return f.get_subfield("u") or ""
     return ""
@@ -113,7 +113,7 @@ def _856_cover_url(record: "MarcRecord") -> str:
     """URL du 1er 856 de couverture ($x = vignette)."""
     for f in record.fields:
         if f.tag == "856":
-            x = (f.get_subfield("x") or "").strip()
+            x = (f.get_subfield("x") or "").strip().lower()
             if x == "vignette":
                 return f.get_subfield("u") or ""
     return ""
@@ -211,13 +211,13 @@ PREPARED_COLUMNS = [
         "width":    70, "stretch": False,
     },
     {
-        "label":   "URL document",
+        "label":   "URL doc (856)",
         "extract": _856_doc_url,
         "width":   200, "stretch": True,
     },
     {
-        "label":   "URL couverture",
-        "extract": _856_cover_url,
+        "label":   "URL couv (859)",
+        "extract": _859_cover_url,
         "width":   200, "stretch": True,
     },
     {
