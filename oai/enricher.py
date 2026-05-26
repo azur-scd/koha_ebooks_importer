@@ -22,7 +22,7 @@ Les notices non appariées (absentes de match_result.matches) ne sont pas
 modifiées.
 
 Pour étendre :
-  - Ajouter d'autres champs à enrichir en créant une fonction _enrich_xxx()
+  - Ajouter d'autres champs à enrichir en créant une fonction _update_xxx()
     et en l'appelant depuis enrich_prepared_records().
     
 """
@@ -107,7 +107,7 @@ def _is_http_url(val: str) -> bool:
 # Enrichissement d'une notice
 # ---------------------------------------------------------------------------
 
-def _enrich_isbn(marc: MarcRecord, oai: OaiRecord) -> bool:
+def _update_isbn(marc: MarcRecord, oai: OaiRecord) -> bool:
     """
     Remplace le 010$a par l'ISBN issu de l'OAI.
     Ne touche pas au 073$a (EAN). Retourne True si une modification est faite.
@@ -124,7 +124,7 @@ def _enrich_isbn(marc: MarcRecord, oai: OaiRecord) -> bool:
     return old != isbn
 
 
-def _enrich_856(marc: MarcRecord, oai: OaiRecord) -> bool:
+def _update_856(marc: MarcRecord, oai: OaiRecord) -> bool:
     """
     Remplace la zone 856 d'accès par l'URL dc:identifier HTTP de l'OAI.
     Toutes les 856 existantes sont supprimées avant création.
@@ -140,7 +140,7 @@ def _enrich_856(marc: MarcRecord, oai: OaiRecord) -> bool:
     return True
 
 
-def _enrich_859(marc: MarcRecord, oai: OaiRecord) -> bool:
+def _update_859(marc: MarcRecord, oai: OaiRecord) -> bool:
     """
     Remplace la zone 859 (couverture) par l'URL dc:relation HTTP de l'OAI.
     Si aucune URL de couverture n'est trouvée, la 859 existante est conservée.
@@ -156,13 +156,11 @@ def _enrich_859(marc: MarcRecord, oai: OaiRecord) -> bool:
     return True
 
 
-def _enrich_resume(marc: MarcRecord, oai: OaiRecord) -> bool:
+def _update_349(marc: MarcRecord, oai: OaiRecord) -> bool:
     """
     Copie dc:description de l'OAI dans une zone 349$a locale.
-
+    Ecrase le 349 récupéré en UNIMARC
     Un $2 "oai-pmh biblioondemand" est ajouté pour indiquer la provenance.
-    Les zones 349 existantes (ex. résumé fournisseur source) sont conservées —
-    la nouvelle 349 est ajoutée en plus.
     La zone 330 reste réservée aux résumés issus du Sudoc.
 
     Retourne True si une zone 349 a été ajoutée.
@@ -170,13 +168,14 @@ def _enrich_resume(marc: MarcRecord, oai: OaiRecord) -> bool:
     description = oai.first("description").strip()
     if not description:
         return False
+    marc.remove_fields("349")
     zone_349 = MarcField(tag="349", ind1=" ", ind2=" ")
     zone_349.add_subfield("a", description)
     zone_349.add_subfield("2", "oai-pmh biblioondemand")
     marc.add_field(zone_349)
     return True
 
-def _enrich_830(marc: MarcRecord, oai: OaiRecord) -> bool:
+def _update_830(marc: MarcRecord, oai: OaiRecord) -> bool:
     """
     Remplace la zone 830 (note de catalogage).
     """
@@ -221,13 +220,13 @@ def enrich_prepared_records(
         marc           = prepared[idx]
         changed_fields = []
 
-        if _enrich_isbn(marc, oai_rec):
+        if _update_isbn(marc, oai_rec):
             changed_fields.append("010$a")
-        if _enrich_856(marc, oai_rec):
+        if _update_856(marc, oai_rec):
             changed_fields.append("856")
-        if _enrich_859(marc, oai_rec):
+        if _update_859(marc, oai_rec):
             changed_fields.append("859")
-        if _enrich_resume(marc, oai_rec):
+        if _update_349(marc, oai_rec):
             changed_fields.append("349")
 
         report.details.append(EnrichmentDetail(
@@ -238,7 +237,7 @@ def enrich_prepared_records(
         ))
         if changed_fields:
             report.n_enriched += 1
-            _enrich_830(marc, oai_rec)
+            _update_830(marc, oai_rec)
 
     return report
 
