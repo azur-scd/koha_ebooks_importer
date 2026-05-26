@@ -171,7 +171,7 @@ def _update_349(marc: MarcRecord, oai: OaiRecord) -> bool:
     marc.remove_fields("349")
     zone_349 = MarcField(tag="349", ind1=" ", ind2=" ")
     zone_349.add_subfield("a", description)
-    zone_349.add_subfield("2", "oai-pmh biblioondemand")
+    zone_349.add_subfield("2", "DC biblioondemand")
     marc.add_field(zone_349)
     return True
 
