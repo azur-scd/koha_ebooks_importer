@@ -571,6 +571,7 @@ def move_330_to_349(record: MarcRecord) -> None:
     for field in record.fields:
         if field.tag == "330":
             field.tag = "349"
+            field.add_subfield("2","UNIMARC biblioondemand")
 
 def detect_platform(record: MarcRecord) -> str:
     """
