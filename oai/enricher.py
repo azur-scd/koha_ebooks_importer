@@ -39,9 +39,52 @@ from oai.matcher import MatchResult
 from config import ZONE_830_UNIMARC_ET_DC
 
 
+
+# ---------------------------------------------------------------------------
+# Nettoyage des données (uitle pour les résumés notamment)
+# ---------------------------------------------------------------------------
+
+_NBSP_CHARS = ("\u00A0", "\u202F", "\u2007")
+_HTML_ENTITIES = {
+    "&nbsp;": " ",
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+}
+_RE_HTML_TAG = re.compile(r"<[^>]+>")
+_RE_WHITESPACE = re.compile(r"[\r\n\t]+")
+_RE_MULTI_SPACES = re.compile(r" {2,}")
+
+
+def _clean_oai_value(text: str) -> str:
+    """
+    Nettoie une valeur issue de l'OAI avant toute utilisation métier.
+    """
+    if not text:
+        return ""
+
+    # Etape 1 - NBSP -> espace ordinaire
+    for ch in _NBSP_CHARS:
+        text = text.replace(ch, " ")
+    # Etape 2 - Entites HTML
+    for entity, replacement in _HTML_ENTITIES.items():
+        text = text.replace(entity, replacement)
+    # Etape 3 - Balises HTML -> espace
+    text = _RE_HTML_TAG.sub(" ", text)
+    # Etape 4 - Sauts de ligne et tabulations -> espace
+    text = _RE_WHITESPACE.sub(" ", text)
+    # Etape 5 - Espaces multiples
+    text = _RE_MULTI_SPACES.sub(" ", text)
+
+    return text.strip()
+
+
 # ---------------------------------------------------------------------------
 # Extraction des données OAI utiles
 # ---------------------------------------------------------------------------
+
 
 def _extract_isbn_from_oai(oai: OaiRecord) -> str:
     """
@@ -165,7 +208,7 @@ def _update_349(marc: MarcRecord, oai: OaiRecord) -> bool:
 
     Retourne True si une zone 349 a été ajoutée.
     """
-    description = oai.first("description").strip()
+    description = _clean_oai_value(oai.first("description").strip())
     if not description:
         return False
     marc.remove_fields("349")
