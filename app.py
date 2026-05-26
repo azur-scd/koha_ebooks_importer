@@ -225,11 +225,23 @@ class KohaEbookApp:
             messagebox.showerror("Erreur de préparation", str(exc))
 
     def _action_export(self) -> None:
-        """Exporte les notices préparées en MARCXML."""
+        """Exporte les notices préparées ou enrichies par le Sudoc en MARCXML."""
         if not self._prepared:
             self._view.set_status(MESSAGES["no_prepared"], level="warning")
             messagebox.showwarning("Rien à exporter", MESSAGES["no_prepared"])
             return
+        
+        if self._sudoc_enriched:
+            notices_exportees = self._sudoc_enriched
+            niveau_enrichissement = "notices UNIMARC BOOD enrichies par OAI et par le Sudoc"
+        elif self._oai_enriched:
+            notices_exportees = self._oai_enriched
+            niveau_enrichissement = "notices UNIMARC BOOD enrichies par OAI"
+        else :
+            notices_exportees = self._prepared
+            niveau_enrichissement = "notices UNIMARC BOOD"
+
+           
 
         filetypes = [
             (label, f"*{ext}")
@@ -252,12 +264,12 @@ class KohaEbookApp:
                 break
 
         try:
-            export_fn(self._prepared, path)
+            export_fn(notices_exportees, path)
             self._view.set_status(
                 MESSAGES["export_success"].format(path=path), level="success"
             )
             messagebox.showinfo(
-                "Export réussi",
+                "Export réussi : " + niveau_enrichissement ,
                 MESSAGES["export_success"].format(path=path),
             )
         except Exception as exc:
