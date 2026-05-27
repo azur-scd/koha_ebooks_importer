@@ -241,8 +241,15 @@ def _build_ref(record: "MarcRecord") -> str:
     prenom   = record.get_value("700", "b").strip()
     edition  = record.get_value("205", "a").strip()
     editeur  = (record.get_value("214", "c") or record.get_value("210", "c")).strip()
-    date     = (record.get_value("214", "d") or record.get_value("210", "d")).strip()
     isbn     = record.get_value("010", "a").strip()
+    date = ""
+    for field in record.get_fields("214"):
+        value = field.get_subfields("d")
+        if value and value[0].strip():
+            date = value[0].strip()
+            break
+    if not date:
+        date = (record.get_value("210", "d") or "").strip()
 
     auteur_str  = f"{auteur}{', ' + prenom if prenom else ''}" if auteur else ""
     edition_str = f" ({edition})" if edition else ""
