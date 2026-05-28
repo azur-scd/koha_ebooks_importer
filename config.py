@@ -125,6 +125,15 @@ def _859_cover_url(record: "MarcRecord") -> str:
             return f.get_subfield("u") or ""
     return ""
 
+
+def _first_non_empty_214_d(record: "MarcRecord") -> str:
+    """Première valeur non vide de 214$d."""
+    for field in record.get_fields("214"):
+        value = field.get_subfield("d")
+        if value and value.strip():
+            return value.strip()
+    return ""
+
 # ---------------------------------------------------------------------------
 # Colonnes du tableau "Données source"
 # ---------------------------------------------------------------------------
@@ -274,7 +283,7 @@ SUDOC_COLUMNS = [
     },
     {
         "label":   "Date (214$d)",
-        "extract": lambda r: r.get_value("214", "d"),
+        "extract": _first_non_empty_214_d,
         "width":    70, "stretch": False,
     },
     {
