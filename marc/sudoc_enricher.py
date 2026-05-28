@@ -243,11 +243,8 @@ def _build_ref(record: "MarcRecord") -> str:
     editeur  = (record.get_value("214", "c") or record.get_value("210", "c")).strip()
     isbn     = record.get_value("010", "a").strip()
     date = ""
-    print ("boucle \n")
     for field in record.get_fields("214"):
         value = field.get_subfield("d")
-        print ("iteration \n")
-        print (value + "\n")
         if value and value[0].strip():
             date = value[0].strip()
             break
