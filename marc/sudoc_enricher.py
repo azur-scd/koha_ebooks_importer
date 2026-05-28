@@ -270,7 +270,7 @@ def _build_ref(record: "MarcRecord") -> str:
 
 
 def enrich_with_sudoc(
-    prepared:    List[MarcRecord],
+    records:    List[MarcRecord],
     progress_cb: Optional[Callable[[int, int], None]] = None,
 ) -> SudocEnrichmentReport:
     """
@@ -289,7 +289,7 @@ def enrich_with_sudoc(
     Les erreurs réseau n'interrompent pas le traitement.
 
     Args:
-        prepared    : Liste des notices UNIMARC (modifiées en place).
+        records    : Liste des notices UNIMARC (modifiées en place).
         progress_cb : Callback(n_done, n_total) appelé après chaque notice.
 
     Returns:
@@ -300,11 +300,11 @@ def enrich_with_sudoc(
         replace_fields_from_sudoc, convert_215_to_307,
     )
 
-    report   = SudocEnrichmentReport(n_total=len(prepared))
-    n_total  = len(prepared)
+    report   = SudocEnrichmentReport(n_total=len(records))
+    n_total  = len(records)
     last_req = 0.0
 
-    for idx, record in enumerate(prepared):
+    for idx, record in enumerate(records):
         isbn  = record.get_value("010", "a").strip()
         titre = record.get_value("200", "a").strip() or "(sans titre)"
 
