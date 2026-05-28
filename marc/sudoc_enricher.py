@@ -280,7 +280,7 @@ def enrich_with_sudoc(
       1. Extrait l'ISBN depuis 010$a.
       2. Interroge le webservice Sudoc ISBN2PPN pour obtenir le PPN.
       3. Si un PPN est trouvé :
-         a. Ajoute la mention PPN dans 801$b.
+         a. Ajoute le PPN PPN dans 801$b.
          b. Récupère la notice MARC complète depuis le Sudoc (.xml, MARCXML sans namespace).
          c. Remplace les zones définies dans SUDOC_REPLACE_TAGS par celles
             de la notice Sudoc (la notice Sudoc fait autorité sur ces zones).
