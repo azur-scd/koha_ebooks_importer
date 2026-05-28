@@ -220,7 +220,7 @@ def _append_ppn_to_830(record: MarcRecord, ppn: str) -> None:
 
     # Éviter les doublons si l'enrichissement est relancé
     if mention not in current_a:
-        zone_830.set_subfield("b", current_a + mention)
+        zone_830.set_subfield("a", current_a + mention)
 
 
 
