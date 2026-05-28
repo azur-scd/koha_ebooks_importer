@@ -237,6 +237,73 @@ PREPARED_COLUMNS = [
     },
 ]
 
+
+# ---------------------------------------------------------------------------
+# Colonnes du tableau "Enrichissement SUDOC"
+# ---------------------------------------------------------------------------
+SUDOC_COLUMNS = [
+    {
+        "label":   "Identifiant (001)",
+        "extract": lambda r: r.get_value("001"),
+        "width":   130, "stretch": False,
+    },
+    {
+        "label":   "EAN (073$a)",
+        "extract": lambda r: r.get_value("073", "a"),
+        "width":   120, "stretch": False,
+    },
+    {
+        "label":   "ISBN (010$a)",
+        "extract": lambda r: r.get_value("010", "a"),
+        "width":   120, "stretch": False,
+    },
+    {
+        "label":   "Titre (200$a)",
+        "extract": lambda r: r.get_value("200", "a"),
+        "width":   220, "stretch": True,
+    },
+    {
+        "label":   "Mention d'édition (205$a)",
+        "extract": lambda r: r.get_value("205", "a"),
+        "width":   140, "stretch": False,
+    },
+    {
+        "label":   "Éditeur (214$c)",
+        "extract": lambda r: r.get_value("214", "c"),
+        "width":   130, "stretch": False,
+    },
+    {
+        "label":   "Date (214$d)",
+        "extract": lambda r: r.get_value("214", "d"),
+        "width":    70, "stretch": False,
+    },
+    {
+        "label":   "URL doc (856)",
+        "extract": _856_doc_url,
+        "width":   200, "stretch": True,
+    },
+    {
+        "label":   "URL couv (859)",
+        "extract": _859_cover_url,
+        "width":   200, "stretch": True,
+    },
+    {
+        "label":   "Note d'accès (371$a)",
+        "extract": lambda r: r.get_value("371", "a"),
+        "width":   250, "stretch": True,
+    },
+    {
+        "label":   "Source catalogage (801$b)",
+        "extract": lambda r: r.get_value("801", "b"),
+        "width":   200, "stretch": False,
+    },
+    {
+        "label":   "Note catalogage (830$a)",
+        "extract": lambda r: r.get_value("830", "a"),
+        "width":   300, "stretch": False,
+    },
+]
+
 # ---------------------------------------------------------------------------
 # Colonnes du tableau "Données OAI-PMH" (Dublin Core)
 # ---------------------------------------------------------------------------

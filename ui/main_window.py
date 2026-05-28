@@ -7,11 +7,11 @@ Assemble :
   - Toolbar (barre d'outils générale, haut)
   - Panneau de statistiques (gauche, fixe) : compteurs et état courant
   - Notebook avec trois onglets :
-      • "Données source"    : notices UNIMARC importées, sélectionnables
-                              (mini-barre ☑/☐ au-dessus du tableau)
-      • "Données préparées" : notices après traitement Koha + enrichissements,
-                              lecture seule, rafraîchi après chaque étape
-      • "Données OAI-PMH"   : notices Dublin Core collectées, lecture seule
+        Onglet 0 — "Données source"    : notices UNIMARC importées, sélectionnables.
+        Onglet 1 — "Données préparées" : notices après préparation Koha.
+        Onglet 2 — "Données OAI-PMH"   : notices Dublin Core collectées.
+        Onglet 3 — "Croisement OAI"    : notices après croisement UNIMARC/OAI.
+        Onglet 4 — "Enrichissement Sudoc" : notices après enrichissement Sudoc.
   - StatusBar (bas) : message courant et compteur de sélection
 
 Ce module ne contient que la logique de présentation.
@@ -25,7 +25,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Dict, List, Optional
 
-from config import COLORS, APP_TITLE, APP_VERSION, SOURCE_COLUMNS, PREPARED_COLUMNS, OAI_COLUMNS
+from config import COLORS, APP_TITLE, APP_VERSION, SOURCE_COLUMNS, PREPARED_COLUMNS, OAI_COLUMNS, SUDOC_COLUMNS
 from marc.reader import MarcRecord
 from oai.harvester import OaiRecord
 from ui.toolbar import Toolbar
@@ -296,7 +296,7 @@ class MainWindow:
         self._sudoc_placeholder.pack(expand=True)
 
         self._table_sudoc = RecordsTable(
-            tab_sudoc, columns=PREPARED_COLUMNS, on_selection_change=None,
+            tab_sudoc, columns=SUDOC_COLUMNS, on_selection_change=None,
             csv_filename="notices_sudoc.csv",
         )
         self._sudoc_table_visible = False
