@@ -477,140 +477,140 @@ class KohaEbookApp:
         except Exception as exc:
             messagebox.showerror("Erreur d'export", str(exc))
 
-def _action_sudoc_enrich(self) -> None:
-    """
-    Enrichit les notices avec les PPN du Sudoc via ISBN2PPN,
-    dans un thread séparé pour ne pas geler l'interface.
+    def _action_sudoc_enrich(self) -> None:
+        """
+        Enrichit les notices avec les PPN du Sudoc via ISBN2PPN,
+        dans un thread séparé pour ne pas geler l'interface.
 
-    Source utilisée :
-      - self._oai_enriched si un enrichissement OAI a déjà été fait
-      - sinon self._prepared
+        Source utilisée :
+        - self._oai_enriched si un enrichissement OAI a déjà été fait
+        - sinon self._prepared
 
-    Le résultat final est stocké dans self._sudoc_enriched.
+        Le résultat final est stocké dans self._sudoc_enriched.
 
-    Le thread de travail communique avec le thread UI via root.after(),
-    qui est la seule méthode thread-safe pour mettre à jour Tkinter.
-    """
-    source_records = self._oai_enriched if self._oai_enriched else self._prepared
+        Le thread de travail communique avec le thread UI via root.after(),
+        qui est la seule méthode thread-safe pour mettre à jour Tkinter.
+        """
+        source_records = self._oai_enriched if self._oai_enriched else self._prepared
 
-    if not source_records:
-        messagebox.showwarning(
-            "Données manquantes",
-            "Veuillez d'abord préparer les notices avant de lancer l'enrichissement Sudoc.",
-        )
-        return
-
-    # Construire une copie de travail dédiée à l'enrichissement Sudoc
-    self._sudoc_enriched = [rec.clone() for rec in source_records]
-    self._sudoc_report = None
-
-    n = len(self._sudoc_enriched)
-    source_label = "OAI" if self._oai_enriched else "préparées"
-
-    confirm = messagebox.askyesno(
-        "Enrichissement Sudoc",
-        f"{n} notice(s) à traiter (source : {source_label}).\n\n"
-        "L'opération interroge le webservice Sudoc notice par notice.\n"
-        "Elle peut prendre plusieurs minutes selon le volume.\n\n"
-        "Lancer l'enrichissement Sudoc ?",
-    )
-    if not confirm:
-        self._sudoc_enriched = []
-        return
-
-    # Désactiver les boutons pendant le traitement
-    for key in (
-        "sudoc_enrich",
-        "export",
-        "prepare",
-        "import",
-        "oai_fetch",
-        "oai_match",
-        "reset",
-        "quit",
-    ):
-        self._view.set_button_enabled(key, False)
-
-    self._view.set_status("Enrichissement Sudoc en cours…", level="info")
-
-    def _update_progress(n_done: int, n_total: int) -> None:
-        """Appelé depuis le thread UI via root.after — thread-safe."""
-        n_found_so_far = sum(
-            1
-            for d in self._sudoc_report.details
-            if d.status in ("found_unique", "found_multiple")
-        ) if self._sudoc_report else 0
-
-        self._view.set_status(
-            f"Enrichissement Sudoc : {n_done} / {n_total} notices traitées"
-            f" ({n_found_so_far} PPN trouvé(s))…",
-            level="info",
-        )
-        self._view.update_stat("sudoc", n_found_so_far)
-
-    def _progress_cb(n_done: int, n_total: int) -> None:
-        """Callback appelé depuis le thread de travail — délègue à root.after."""
-        self._root.after(0, _update_progress, n_done, n_total)
-
-    def _worker() -> None:
-        """Travail réseau dans le thread de fond."""
-        try:
-            self._sudoc_report = enrich_with_sudoc(
-                self._sudoc_enriched,
-                progress_cb=_progress_cb,
+        if not source_records:
+            messagebox.showwarning(
+                "Données manquantes",
+                "Veuillez d'abord préparer les notices avant de lancer l'enrichissement Sudoc.",
             )
-            self._root.after(0, _on_success)
-        except Exception as exc:
-            self._root.after(0, _on_error, str(exc))
-
-    def _on_success() -> None:
-        """Appelé dans le thread UI à la fin du traitement."""
-        rep = self._sudoc_report
-        if rep is None:
-            _on_error("Rapport Sudoc introuvable.")
             return
 
-        self._view.update_stat("sudoc", rep.n_found)
-
-        # Afficher les données enrichies dans l'onglet dédié
-        self._view.load_sudoc_records(self._sudoc_enriched)
-
-        self._view.set_status(
-            f"Enrichissement Sudoc terminé : {rep.n_found} PPN trouvé(s), "
-            f"{rep.n_marc_fetched} notice(s) MARC récupérée(s) "
-            f"sur {rep.n_total} notice(s) traitée(s).",
-            level="success",
-        )
-
-        # Réactiver l'interface utile après traitement
-        self._set_initial_state()
-        self._view.set_button_enabled("export", True)
-        self._view.set_button_enabled("oai_fetch", True)
-        self._view.set_button_enabled("sudoc_enrich", True)
-
-        lines = rep.summary_lines()
-        lines.append("")
-        lines.append("Voulez-vous télécharger le rapport détaillé ?")
-        if messagebox.askyesno("Enrichissement Sudoc — Résultat", "\n".join(lines)):
-            self._download_sudoc_log()
-
-    def _on_error(err: str) -> None:
-        """Appelé dans le thread UI en cas d'exception."""
-        self._view.set_status(f"Erreur Sudoc : {err}", level="error")
-        messagebox.showerror("Erreur Sudoc", err)
-
-        # En cas d'échec, on invalide le résultat Sudoc
-        self._sudoc_enriched = []
+        # Construire une copie de travail dédiée à l'enrichissement Sudoc
+        self._sudoc_enriched = [rec.clone() for rec in source_records]
         self._sudoc_report = None
 
-        # Réactiver les boutons même en cas d'erreur
-        self._set_initial_state()
-        self._view.set_button_enabled("export", True)
-        self._view.set_button_enabled("oai_fetch", True)
-        self._view.set_button_enabled("sudoc_enrich", True)
+        n = len(self._sudoc_enriched)
+        source_label = "OAI" if self._oai_enriched else "préparées"
 
-    import threading
-    threading.Thread(target=_worker, daemon=True).start()
+        confirm = messagebox.askyesno(
+            "Enrichissement Sudoc",
+            f"{n} notice(s) à traiter (source : {source_label}).\n\n"
+            "L'opération interroge le webservice Sudoc notice par notice.\n"
+            "Elle peut prendre plusieurs minutes selon le volume.\n\n"
+            "Lancer l'enrichissement Sudoc ?",
+        )
+        if not confirm:
+            self._sudoc_enriched = []
+            return
+
+        # Désactiver les boutons pendant le traitement
+        for key in (
+            "sudoc_enrich",
+            "export",
+            "prepare",
+            "import",
+            "oai_fetch",
+            "oai_match",
+            "reset",
+            "quit",
+        ):
+            self._view.set_button_enabled(key, False)
+
+        self._view.set_status("Enrichissement Sudoc en cours…", level="info")
+
+        def _update_progress(n_done: int, n_total: int) -> None:
+            """Appelé depuis le thread UI via root.after — thread-safe."""
+            n_found_so_far = sum(
+                1
+                for d in self._sudoc_report.details
+                if d.status in ("found_unique", "found_multiple")
+            ) if self._sudoc_report else 0
+
+            self._view.set_status(
+                f"Enrichissement Sudoc : {n_done} / {n_total} notices traitées"
+                f" ({n_found_so_far} PPN trouvé(s))…",
+                level="info",
+            )
+            self._view.update_stat("sudoc", n_found_so_far)
+
+        def _progress_cb(n_done: int, n_total: int) -> None:
+            """Callback appelé depuis le thread de travail — délègue à root.after."""
+            self._root.after(0, _update_progress, n_done, n_total)
+
+        def _worker() -> None:
+            """Travail réseau dans le thread de fond."""
+            try:
+                self._sudoc_report = enrich_with_sudoc(
+                    self._sudoc_enriched,
+                    progress_cb=_progress_cb,
+                )
+                self._root.after(0, _on_success)
+            except Exception as exc:
+                self._root.after(0, _on_error, str(exc))
+
+        def _on_success() -> None:
+            """Appelé dans le thread UI à la fin du traitement."""
+            rep = self._sudoc_report
+            if rep is None:
+                _on_error("Rapport Sudoc introuvable.")
+                return
+
+            self._view.update_stat("sudoc", rep.n_found)
+
+            # Afficher les données enrichies dans l'onglet dédié
+            self._view.load_sudoc_records(self._sudoc_enriched)
+
+            self._view.set_status(
+                f"Enrichissement Sudoc terminé : {rep.n_found} PPN trouvé(s), "
+                f"{rep.n_marc_fetched} notice(s) MARC récupérée(s) "
+                f"sur {rep.n_total} notice(s) traitée(s).",
+                level="success",
+            )
+
+            # Réactiver l'interface utile après traitement
+            self._set_initial_state()
+            self._view.set_button_enabled("export", True)
+            self._view.set_button_enabled("oai_fetch", True)
+            self._view.set_button_enabled("sudoc_enrich", True)
+
+            lines = rep.summary_lines()
+            lines.append("")
+            lines.append("Voulez-vous télécharger le rapport détaillé ?")
+            if messagebox.askyesno("Enrichissement Sudoc — Résultat", "\n".join(lines)):
+                self._download_sudoc_log()
+
+        def _on_error(err: str) -> None:
+            """Appelé dans le thread UI en cas d'exception."""
+            self._view.set_status(f"Erreur Sudoc : {err}", level="error")
+            messagebox.showerror("Erreur Sudoc", err)
+
+            # En cas d'échec, on invalide le résultat Sudoc
+            self._sudoc_enriched = []
+            self._sudoc_report = None
+
+            # Réactiver les boutons même en cas d'erreur
+            self._set_initial_state()
+            self._view.set_button_enabled("export", True)
+            self._view.set_button_enabled("oai_fetch", True)
+            self._view.set_button_enabled("sudoc_enrich", True)
+
+        import threading
+        threading.Thread(target=_worker, daemon=True).start()
 
     def _download_sudoc_log(self) -> None:
         """Ouvre un dialogue de sauvegarde et écrit le rapport Sudoc."""
