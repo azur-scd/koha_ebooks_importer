@@ -89,10 +89,10 @@ class SudocEnrichmentReport:
 
 
 # ---------------------------------------------------------------------------
-# Appel au webservice
+# Appel au webservice ISBN2PPN
 # ---------------------------------------------------------------------------
 
-def _fetch_ppn(isbn: str) -> tuple:
+def _isbn2ppn(isbn: str) -> tuple:
     """
     Interroge le webservice Sudoc ISBN2PPN.
 
@@ -323,7 +323,7 @@ def enrich_with_sudoc(
         if elapsed < SUDOC_REQUEST_DELAY:
             time.sleep(SUDOC_REQUEST_DELAY - elapsed)
 
-        ppn, status, all_ppns, error_msg = _fetch_ppn(isbn)
+        ppn, status, all_ppns, error_msg = _isbn2ppn(isbn)
         last_req = time.monotonic()
 
         detail = SudocDetail(
@@ -503,6 +503,6 @@ def generate_sudoc_report(
     lines.append("RAPPORT D'ENRICHISSEMENT SUDOC (ISBN2PPN + MARC)")
     lines.append(f"Généré le : {now}")
 
-# Import nécessaire pour _fetch_ppn
+# Import nécessaire pour _isbn2ppn
 import urllib.parse
 from marc.reader import MarcField

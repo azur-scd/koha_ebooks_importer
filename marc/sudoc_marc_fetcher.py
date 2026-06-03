@@ -18,13 +18,13 @@ Ce module fournit les fonctions nécessaires pour :
        - Que des ebooks          → 1er ebook
        - Que des livres imprimés → 1er disponible
 
-  4. Remplacer dans la notice locale les zones listées dans SUDOC_REPLACE_TAGS
+  4. Remplacer dans la notice locale les zones listées dans SUDOC_PRINT_REPLACE_TAGS
      par celles de la notice Sudoc (la notice Sudoc fait autorité).
 
   5. Convertir la zone 215 (description matérielle) en note 307.
 
 Pour étendre :
-  - Modifier SUDOC_REPLACE_TAGS pour ajouter/retirer des zones à remplacer.
+  - Modifier SUDOC_PRINT_REPLACE_TAGS pour ajouter/retirer des zones à remplacer.
   - Modifier PAGINATION_PREFIX pour changer le libellé de la note 307.
 """
 
