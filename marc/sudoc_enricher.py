@@ -50,8 +50,8 @@ class SudocDetail:
     """Résultat de la recherche Sudoc pour une notice."""
     marc_index:      int
     isbn:            str
-    ppn:             str          # PPN retenu (premier), ou chaîne vide
-    status:          str          # "found_unique", "found_multiple", "not_found", "error", "no_isbn"
+    best_ppn:        str          # PPN retenu (ebook ou print), ou chaîne vide
+    status:          str          # "found", "not_found", "error", "no_isbn"
     error_msg:       str = ""     # Détail de l'erreur si status == "error"
     titre:           str = ""     # Titre de la notice (200$a) pour le log
     marc_fetched:    bool = False  # True si la notice MARC Sudoc a été récupérée
@@ -59,7 +59,7 @@ class SudocDetail:
     all_ppns:        List[str] = field(default_factory=list)  # Tous les PPN retournés
     ref_locale:      str = ""     # Référence bibliographique avant enrichissement
     ref_sudoc:       str = ""     # Référence bibliographique de la notice Sudoc
-    doc_type_sudoc:  str = ""     # "print", "ebook" ou "unknown" pour la notice Sudoc retenue
+    doc_type_sudoc:  str = ""     # version de la notice Sudoc retenue ("print", "ebook" ou "unknown")
 
 
 @dataclass
@@ -97,9 +97,7 @@ def _isbn2ppn(isbn: str) -> tuple:
     Interroge le webservice Sudoc ISBN2PPN.
 
     Retourne un tuple (ppn, status, all_ppns, error_msg) :
-      ppn       : Premier PPN retenu, ou chaîne vide.
-      status    : "found_unique"   — exactement 1 PPN dans "result"
-                  "found_multiple" — plusieurs PPN dans "result" (1er retenu)
+      status    : "found"          - 1 ou plusieurs PPN dans "result"
                   "not_found"      — réponse valide mais aucun PPN
                   "error"          — erreur réseau, HTTP ou JSON invalide
       all_ppns  : Liste de tous les PPN retournés (vide si non trouvé).
@@ -124,28 +122,28 @@ def _isbn2ppn(isbn: str) -> tuple:
                 body = exc.read().decode("utf-8", errors="replace")
                 data = json.loads(body)
                 msg  = data.get("sudoc", {}).get("error", "")
-                return "", "not_found", [], msg or "ISBN non trouvé (404)"
+                return "not_found", [], msg or "ISBN non trouvé (404)"
             except Exception:
-                return "", "not_found", [], "ISBN non trouvé (404)"
+                return "not_found", [], "ISBN non trouvé (404)"
         # Toute autre erreur HTTP (500, 503…) est une vraie erreur technique
-        return "", "error", [], f"HTTP {exc.code} {exc.reason}"
+        return "error", [], f"HTTP {exc.code} {exc.reason}"
     except urllib.error.URLError as exc:
-        return "", "error", [], f"Erreur réseau : {exc.reason}"
+        return "error", [], f"Erreur réseau : {exc.reason}"
     except Exception as exc:
-        return "", "error", [], f"Erreur inattendue : {exc}"
+        return "error", [], f"Erreur inattendue : {exc}"
 
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        return "", "error", [], f"JSON invalide : {exc}"
+        return "error", [], f"JSON invalide : {exc}"
 
     try:
         result = data["sudoc"]["query"]["result"]
     except (KeyError, TypeError):
-        return "", "not_found", [], ""
+        return "not_found", [], ""
 
     if not result:
-        return "", "not_found", [], ""
+        return "not_found", [], ""
 
     # Le Sudoc retourne "result" sous deux formes selon le nombre de PPN :
     #   - Un seul PPN  : {"ppn": "260136441"}          (dict)
@@ -153,17 +151,15 @@ def _isbn2ppn(isbn: str) -> tuple:
     if isinstance(result, dict):
         ppn = result.get("ppn", "").strip()
         if not ppn:
-            return "", "not_found", [], ""
-        return ppn, "found_unique", [ppn], ""
+            return "not_found", [], ""
+        return "found", [ppn], ""
 
     # result est une liste
     all_ppns = [r.get("ppn", "").strip() for r in result if r.get("ppn", "").strip()]
     if not all_ppns:
-        return "", "not_found", [], ""
+        return "not_found", [], ""
 
-    ppn    = all_ppns[0]
-    status = "found_unique" if len(all_ppns) == 1 else "found_multiple"
-    return ppn, status, all_ppns, ""
+    return "found", all_ppns, ""
 
 
 # ---------------------------------------------------------------------------
@@ -323,11 +319,11 @@ def enrich_with_sudoc(
         if elapsed < SUDOC_REQUEST_DELAY:
             time.sleep(SUDOC_REQUEST_DELAY - elapsed)
 
-        ppn, status, all_ppns, error_msg = _isbn2ppn(isbn)
+        status, all_ppns, error_msg = _isbn2ppn(isbn)
         last_req = time.monotonic()
 
         detail = SudocDetail(
-            marc_index=idx, isbn=isbn, ppn=ppn,
+            marc_index=idx, isbn=isbn, 
             status=status, error_msg=error_msg,
             titre=titre, all_ppns=all_ppns,
             ref_locale=_build_ref(record),   # capturé pour tous les statuts
