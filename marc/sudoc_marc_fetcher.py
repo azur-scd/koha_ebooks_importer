@@ -50,9 +50,22 @@ SUDOC_TIMEOUT  = 15  # secondes
 # Si la zone est absente dans la notice Sudoc, les zones locales sont supprimées.
 # NOTE : la zone 215 est exclue — elle est traitée séparément par
 # convert_215_to_307() qui reformule son $a en note 307.
-SUDOC_REPLACE_TAGS: Set[str] = {
-    "100", "101", "102", "105",
+SUDOC_PRINT_REPLACE_TAGS: Set[str] = {
+    "101", "102", "105",
     "200", "205", "210", "214",
+    "225",
+    "300", "304", "305", "306", "307", "308",
+    "314", "320", "327", "330", "333", "334", "359",
+    "454",
+    "500", "503", "510", "512", "513", "514", "515", "517",
+    "600", "601", "604", "605", "606", "607", "608", "610", "616",
+    "676",
+    "700", "701", "702", "710", "711", "712", "720", "721", "722",
+}
+
+SUDOC_EBOOK_REPLACE_TAGS: Set[str] = {
+    "101", "102", "105",
+    "200", "205",
     "225",
     "300", "304", "305", "306", "307", "308",
     "314", "320", "327", "330", "333", "334", "359",
@@ -282,7 +295,7 @@ def convert_215_to_307(local: MarcRecord, sudoc: MarcRecord) -> bool:
 def replace_fields_from_sudoc(
     local: MarcRecord,
     sudoc: MarcRecord,
-    tags:  Set[str] = SUDOC_REPLACE_TAGS,
+    tags:  Set[str] = SUDOC_PRINT_REPLACE_TAGS,
 ) -> List[str]:
     """
     Remplace dans `local` les zones dont le tag figure dans `tags` par
@@ -299,7 +312,7 @@ def replace_fields_from_sudoc(
     Args:
         local : Notice locale à modifier (en place).
         sudoc : Notice Sudoc source.
-        tags  : Ensemble des tags à remplacer (défaut : SUDOC_REPLACE_TAGS).
+        tags  : Ensemble des tags à remplacer (défaut : SUDOC_PRINT_REPLACE_TAGS).
 
     Returns:
         Liste des tags effectivement modifiés (utile pour le rapport de log).
