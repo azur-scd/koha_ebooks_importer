@@ -405,12 +405,10 @@ def generate_sudoc_report(
         lines.append("  Un ou plusieurs PPN retournés : le meilleur a été utilisé (par défaut notice de la version imprimée).")
         lines.append("")
         for d in multi_with_marc:
-            dtype_label = {"print": "livre imprimé", "ebook": "ebook", "unknown": "inconnu"}.get(d.doc_type, "")
-            dtype_str   = f" [{dtype_label}]" if dtype_label else ""
             others      = [p for p in d.all_ppns if p != d.best_ppn]
-            lines.append(f"  #{d.marc_index + 1:>4}  PPN retenu {d.best_ppn} - {dtype_str}  (autres PPN : {', '.join(others)})")
+            lines.append(f"  #{d.marc_index + 1:>4}  PPN retenu {d.best_ppn} (autres PPN : {', '.join(others)})")
             lines.append(f"    Avant  : {d.ref_locale}")
-            lines.append(f"    Sudoc  : {d.ref_sudoc} - {dtype_str}")
+            lines.append(f"    Sudoc  : {d.ref_sudoc}")
             lines.append(f"    Zones modifiées  : {', '.join(d.tags_replaced) or '(aucune)'}")
             lines.append("")
     else:
