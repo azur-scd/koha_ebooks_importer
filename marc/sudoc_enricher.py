@@ -59,7 +59,7 @@ class SudocDetail:
     all_ppns:        List[str] = field(default_factory=list)  # Tous les PPN retournés
     ref_locale:      str = ""     # Référence bibliographique avant enrichissement
     ref_sudoc:       str = ""     # Référence bibliographique de la notice Sudoc
-    doc_type_sudoc:  str = ""     # version de la notice Sudoc retenue ("print", "ebook" ou "unknown")
+    doc_type:  str = ""     # version de la notice Sudoc retenue ("print", "ebook" ou "unknown")
 
 
 @dataclass
@@ -266,7 +266,7 @@ def _build_ref(record: "MarcRecord") -> str:
 
 
 def enrich_with_sudoc(
-    records:    List[MarcRecord],
+    local_records:    List[MarcRecord],
     progress_cb: Optional[Callable[[int, int], None]] = None,
 ) -> SudocEnrichmentReport:
     """
@@ -285,7 +285,7 @@ def enrich_with_sudoc(
     Les erreurs réseau n'interrompent pas le traitement.
 
     Args:
-        records    : Liste des notices UNIMARC (modifiées en place).
+        local_records    : Liste des notices UNIMARC (modifiées en place).
         progress_cb : Callback(n_done, n_total) appelé après chaque notice.
 
     Returns:
@@ -296,18 +296,18 @@ def enrich_with_sudoc(
         replace_fields_from_sudoc, convert_215_to_307,
     )
 
-    report   = SudocEnrichmentReport(n_total=len(records))
-    n_total  = len(records)
+    report   = SudocEnrichmentReport(n_total=len(local_records))
+    n_total  = len(local_records)
     last_req = 0.0
 
-    for idx, record in enumerate(records):
-        isbn  = record.get_value("010", "a").strip()
-        titre = record.get_value("200", "a").strip() or "(sans titre)"
+    for idx, local_record in enumerate(local_records):
+        isbn  = local_record.get_value("010", "a").strip()
+        titre = local_record.get_value("200", "a").strip() or "(sans titre)"
 
         if not isbn:
             report.details.append(SudocDetail(
-                marc_index=idx, isbn="", ppn="", status="no_isbn",
-                titre=titre, ref_locale=_build_ref(record),
+                marc_index=idx, isbn="", best_ppn="", status="no_isbn",
+                titre=titre, ref_locale=_build_ref(local_record),
             ))
             report.n_no_isbn += 1
             if progress_cb:
@@ -323,34 +323,32 @@ def enrich_with_sudoc(
         last_req = time.monotonic()
 
         detail = SudocDetail(
-            marc_index=idx, isbn=isbn, 
+            marc_index=idx, isbn=isbn, best_ppn="",
             status=status, error_msg=error_msg,
             titre=titre, all_ppns=all_ppns,
-            ref_locale=_build_ref(record),   # capturé pour tous les statuts
+            ref_locale=_build_ref(local_record),   # capturé pour tous les statuts
         )
 
-        if status in ("found_unique", "found_multiple"):
+        if status == "found":
             report.n_found += 1
             # Télécharger TOUTES les notices correspondant aux PPN retournés
             # et choisir la plus appropriée selon le type de document
             fetched = fetch_all_sudoc_records(all_ppns)
-            best_ppn, sudoc_rec, doc_type = select_best_record(fetched)
+            best_ppn, sudoc_record, doc_type = select_best_record(fetched)
+            if sudoc_record is not None:
+                # DEBUG
+                print ("{best_ppn} ; {doc_type}")
 
-            # Mettre à jour le PPN retenu si la sélection diffère du premier
-            if best_ppn and best_ppn != ppn:
-                detail.ppn = best_ppn
-
-            if sudoc_rec is not None:
-                print (detail.ppn)
-                _append_ppn_to_801(record, detail.ppn)
-                _append_ppn_to_830(record, detail.ppn)
-                tags_replaced = replace_fields_from_sudoc(record, sudoc_rec)
-                if convert_215_to_307(record, sudoc_rec):
+                _append_ppn_to_801(local_record, best_ppn + "[" + doc_type + "]" )
+                _append_ppn_to_830(local_record, best_ppn + "[" + doc_type + "]" )
+                local_record, tags_replaced = replace_fields_from_sudoc(local_record, sudoc_record, doc_type)
+                if convert_215_to_307(local_record, sudoc_record):
                     tags_replaced.append("215→307")
+                detail.best_ppn = best_ppn
                 detail.marc_fetched   = True
                 detail.tags_replaced  = tags_replaced
-                detail.doc_type_sudoc = doc_type
-                detail.ref_sudoc      = _build_ref(sudoc_rec)
+                detail.doc_type = doc_type
+                detail.ref_sudoc      = "[" + doc_type + "] - " + _build_ref(sudoc_record)
                 report.n_marc_fetched += 1
 
         elif status == "not_found":
@@ -405,7 +403,7 @@ def generate_sudoc_report(
     h1(f"PPN UNIQUE — NOTICE MARC RÉCUPÉRÉE ({len(unique_with_marc)})")
     if unique_with_marc:
         for d in unique_with_marc:
-            dtype_label = {"print": "livre imprimé", "ebook": "ebook"}.get(d.doc_type_sudoc, "")
+            dtype_label = {"print": "livre imprimé", "ebook": "ebook"}.get(d.doc_type, "")
             dtype_str   = f" [{dtype_label}]" if dtype_label else ""
             lines.append(f"  #{d.marc_index + 1:>4}  PPN {d.ppn}{dtype_str}")
             lines.append(f"    Avant  : {d.ref_locale}")
@@ -423,7 +421,7 @@ def generate_sudoc_report(
         lines.append("  Plusieurs PPN retournés : le premier a été utilisé.")
         lines.append("")
         for d in multi_with_marc:
-            dtype_label = {"print": "livre imprimé", "ebook": "ebook"}.get(d.doc_type_sudoc, "")
+            dtype_label = {"print": "livre imprimé", "ebook": "ebook"}.get(d.doc_type, "")
             dtype_str   = f" [{dtype_label}]" if dtype_label else ""
             others      = [p for p in d.all_ppns if p != d.ppn]
             lines.append(f"  #{d.marc_index + 1:>4}  PPN {d.ppn}{dtype_str}  (autres : {', '.join(others)})")

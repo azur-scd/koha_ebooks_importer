@@ -52,7 +52,7 @@ SUDOC_TIMEOUT  = 15  # secondes
 # convert_215_to_307() qui reformule son $a en note 307.
 SUDOC_PRINT_REPLACE_TAGS: Set[str] = {
     "101", "102", "105",
-    "200", "205", "210", "214",
+    "200", "205", "210ac", "214ac",
     "225",
     "300", "304", "305", "306", "307", "308",
     "314", "320", "327", "330", "333", "334", "359",
@@ -293,10 +293,10 @@ def convert_215_to_307(local: MarcRecord, sudoc: MarcRecord) -> bool:
 # ---------------------------------------------------------------------------
 
 def replace_fields_from_sudoc(
-    local: MarcRecord,
-    sudoc: MarcRecord,
-    tags:  Set[str] = SUDOC_PRINT_REPLACE_TAGS,
-) -> List[str]:
+    local_record: MarcRecord,
+    sudoc_record: MarcRecord,
+    doc_type:  str
+) -> tuple[MarcRecord, List[str]]:
     """
     Remplace dans `local` les zones dont le tag figure dans `tags` par
     celles de la notice Sudoc.
@@ -310,26 +310,82 @@ def replace_fields_from_sudoc(
       - Les zones sont triées par tag (001 → 999) après remplacement.
 
     Args:
-        local : Notice locale à modifier (en place).
+        local : Notice locale à modifier.
         sudoc : Notice Sudoc source.
-        tags  : Ensemble des tags à remplacer (défaut : SUDOC_PRINT_REPLACE_TAGS).
+        doc_type  : type de notice (print, ebook, unknown)
 
     Returns:
-        Liste des tags effectivement modifiés (utile pour le rapport de log).
+        Notice modifiée ; Liste des tags effectivement modifiés (utile pour le rapport de log).
     """
-    modified: List[str] = []
 
-    for tag in sorted(tags):
-        local_fields = local.get_fields(tag)
-        sudoc_fields = sudoc.get_fields(tag)
+    result_record = copy.deepcopy(local_record)
 
-        if not local_fields and not sudoc_fields:
-            continue   # Rien à faire pour ce tag
+    if doc_type == "ebook":
+        tags = SUDOC_EBOOK_REPLACE_TAGS
+    else:
+        tags = SUDOC_PRINT_REPLACE_TAGS
 
-        local.remove_fields(tag)
-        for f in sudoc_fields:
-            local.add_field(copy.deepcopy(f))
-        modified.append(tag)
+    modified_tags: List[str] = []
 
-    local.fields.sort(key=lambda f: f.tag)
-    return modified
+# Attention : cette version gère mal le cas des zones répétées, mais vu qu'il ne devrait pas y en avoir dans les données sources
+# ça ne devrait pas être un problème
+    for item in sorted(tags):
+        # Cas d'une zone avec sous-champs, ex. "214ac"
+        if len(item) > 3:
+            tag = item[:3]
+            subfields_to_replace = set(item[3:])
+
+            local_fields = result_record.get_fields(tag)
+            sudoc_fields = sudoc_record.get_fields(tag)
+
+            if not local_fields and not sudoc_fields:
+                continue
+
+            # On traite les zones par position
+            max_fields = max(len(local_fields), len(sudoc_fields))
+
+            for i in range(max_fields):
+
+                if i >= len(local_fields):
+                    # Zone absente localement : on copie toute la zone Sudoc
+                    result_record.add_field(copy.deepcopy(sudoc_fields[i]))
+                    continue
+
+                local_field = local_fields[i]
+
+                # Suppression des sous-champs à remplacer
+                local_field.subfields = [
+                    sf for sf in local_field.subfields
+                    if sf.code not in subfields_to_replace
+                ]
+
+                # Ajout des sous-champs provenant du Sudoc
+                if i < len(sudoc_fields):
+                    for sf in sudoc_fields[i].subfields:
+                        if sf.code in subfields_to_replace:
+                            local_field.add_subfield(
+                                sf.code,
+                                sf.value
+                            )
+
+            modified_tags.append(item)
+
+        # Cas normal : remplacement complet de la zone
+        else:
+            tag = item
+
+            local_fields = result_record.get_fields(tag)
+            sudoc_fields = sudoc_record.get_fields(tag)
+
+            if not local_fields and not sudoc_fields:
+                continue
+
+            result_record.remove_fields(tag)
+
+            for f in sudoc_fields:
+                result_record.add_field(copy.deepcopy(f))
+
+            modified_tags.append(tag)
+
+    result_record.fields.sort(key=lambda f: f.tag)
+    return result_record, modified_tags
