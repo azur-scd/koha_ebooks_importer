@@ -311,15 +311,14 @@ def replace_fields_from_sudoc(
       - Les zones sont triées par tag (001 → 999) après remplacement.
 
     Args:
-        local_record : Notice locale à modifier.
+        local_record : Notice locale à modifier, modifiée directement sur place
         sudoc_record : Notice Sudoc source.
         doc_type  : type de notice (print, ebook, unknown)
 
     Returns:
-        Notice modifiée ; Liste des tags effectivement modifiés (utile pour le rapport de log).
+        Liste des tags effectivement modifiés (utile pour le rapport de log).
     """
 
-    result_record = copy.deepcopy(local_record)
 
     if doc_type == "ebook":
         tags = SUDOC_EBOOK_REPLACE_TAGS
@@ -336,7 +335,7 @@ def replace_fields_from_sudoc(
             tag = item[:3]
             subfields_to_replace = set(item[3:])
 
-            local_fields = result_record.get_fields(tag)
+            local_fields = local_record.get_fields(tag)
             sudoc_fields = sudoc_record.get_fields(tag)
 
             if not local_fields and not sudoc_fields:
@@ -349,7 +348,7 @@ def replace_fields_from_sudoc(
 
                 if i >= len(local_fields):
                     # Zone absente localement : on copie toute la zone Sudoc
-                    result_record.add_field(copy.deepcopy(sudoc_fields[i]))
+                    local_record.add_field(copy.deepcopy(sudoc_fields[i]))
                     continue
 
                 local_field = local_fields[i]
@@ -375,24 +374,19 @@ def replace_fields_from_sudoc(
         else:
             tag = item
 
-            local_fields = result_record.get_fields(tag)
+            local_fields = local_record.get_fields(tag)
             sudoc_fields = sudoc_record.get_fields(tag)
 
             if not local_fields and not sudoc_fields:
                 continue
 
-            result_record.remove_fields(tag)
+            local_record.remove_fields(tag)
 
             for f in sudoc_fields:
-                result_record.add_field(copy.deepcopy(f))
+                local_record.add_field(copy.deepcopy(f))
 
             modified_tags.append(tag)
 
-    result_record.fields.sort(key=lambda f: f.tag)
-    #debug
-    print ("fonction \n")
-    print (result_record.get_field("200").get_subfield("a"))
-    print (result_record.get_field("214").get_subfield("c"))
-    print ("fin fonction \n")
-
-    return result_record, modified_tags
+    local_record.fields.sort(key=lambda f: f.tag)
+    
+    return modified_tags

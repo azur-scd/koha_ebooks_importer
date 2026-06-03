@@ -341,25 +341,7 @@ def enrich_with_sudoc(
 
                 _append_ppn_to_801(local_record, best_ppn + "[" + doc_type + "]" )
                 _append_ppn_to_830(local_record, best_ppn + "[" + doc_type + "]" )
-
-
-                print ("avant \n" )
-
-                print (local_record.get_field("200").get_subfield("a"))
-                print (local_record.get_field("214").get_subfield("c"))
-
-
-
-
-                local_record, tags_replaced = replace_fields_from_sudoc(local_record, sudoc_record, doc_type)
-
-                #debug
-                print ("après \n" )
-
-                print (local_record.get_field("200").get_subfield("a"))
-                print (local_record.get_field("214").get_subfield("c"))
-
-
+                tags_replaced = replace_fields_from_sudoc(local_record, sudoc_record, doc_type)
                 if convert_215_to_307(local_record, sudoc_record):
                     tags_replaced.append("215→307")
                 detail.best_ppn = best_ppn

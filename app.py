@@ -559,12 +559,6 @@ class KohaEbookApp:
                     self._sudoc_enriched,
                     progress_cb=_progress_cb,
                 )
-# debug
-                for idx, loc in enumerate(self._sudoc_enriched):
-                    print (loc.get_field("200").get_subfield("a"))
-                    print (loc.get_field("214").get_subfield("c"))
-
-
                 self._root.after(0, _on_success)
             except Exception as exc:
                 self._root.after(0, _on_error, str(exc))
