@@ -138,22 +138,22 @@ def _parse_marcxml_no_ns(data: bytes) -> Optional[MarcRecord]:
 
     leader_el = rec_el.find("leader")
     if leader_el is not None:
-        record.leader = (leader_el.text or "").strip()
+        record.leader = (leader_el.text or "")
 
     for cf in rec_el.findall("controlfield"):
         record.add_field(MarcField(
             tag=(cf.get("tag", "")),
-            data=(cf.text or "").strip(),
+            data=(cf.text or "")
         ))
 
     for df in rec_el.findall("datafield"):
         field = MarcField(
             tag=df.get("tag", ""),
             ind1=df.get("ind1", " "),
-            ind2=df.get("ind2", " "),
+            ind2=df.get("ind2", " ")
         )
         for sf in df.findall("subfield"):
-            field.add_subfield(sf.get("code", ""), (sf.text or "").strip())
+            field.add_subfield(sf.get("code", ""), (sf.text or ""))
         record.add_field(field)
 
     return record if record.fields else None
@@ -166,6 +166,7 @@ def _parse_marcxml_no_ns(data: bytes) -> Optional[MarcRecord]:
 def _get_doc_type(record: MarcRecord) -> str:
     """
     Détermine le type de document depuis le leader (positions 5-7).
+    Ex : <leader>     clm0 22        450 </leader>
 
     En UNIMARC :
       "cam" → livre imprimé (monographie physique)
