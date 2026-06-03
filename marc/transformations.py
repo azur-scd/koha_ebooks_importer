@@ -656,7 +656,7 @@ def parse_zone_917(record: MarcRecord) -> dict:
     return result
 
 
-def _build_acces_note(plateforme: str, licence: dict) -> str:
+def _build_access_note(plateforme: str, licence: dict) -> str:
     """
     Construit le texte de la note d'accès (371$a) selon les règles métier.
 
@@ -711,14 +711,14 @@ def add_zone_371(record: MarcRecord, plateforme: str, licence: dict) -> str:
         Le texte de la note (pour propagation vers 856$z et 995$z).
     """
     record.remove_fields("371")
-    note = _build_acces_note(plateforme, licence)
+    note = _build_access_note(plateforme, licence)
     field = MarcField(tag="371", ind1=" ", ind2=" ")
     field.add_subfield("a", note)
     record.add_field(field)
     return note
 
 
-def convert_jacket_856_to_859(record: MarcRecord) -> None:
+def move_coverURL_856_to_859(record: MarcRecord) -> None:
     """
     Transforme en zone 859 tout 856 dont le $x vaut "vignette".
 
@@ -969,7 +969,7 @@ def prepare_record_for_koha(
 
     # Conversion jackets -> 859 EN PREMIER (avant detect_platform et propagation)
     # pour que les 856 restants soient bien les liens d'acces au document.
-    convert_jacket_856_to_859(prepared)
+    move_coverURL_856_to_859(prepared)
 
     # Analyse de la plateforme et des conditions de licence
     plateforme = detect_platform(prepared)
