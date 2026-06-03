@@ -415,7 +415,7 @@ class MainWindow:
 
     # ── Onglet enrichissement Sudoc ────────────────────────────────────
 
-    def load_sudoc_records(self, records: List[MarcRecord]) -> None:
+    def load_sudoc_enriched_records(self, records: List[MarcRecord]) -> None:
         """
         Charge les notices après enrichissement Sudoc dans l'onglet dédié.
         Bascule sur cet onglet au premier appel.

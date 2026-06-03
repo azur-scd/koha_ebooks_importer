@@ -311,8 +311,8 @@ def replace_fields_from_sudoc(
       - Les zones sont triées par tag (001 → 999) après remplacement.
 
     Args:
-        local : Notice locale à modifier.
-        sudoc : Notice Sudoc source.
+        local_record : Notice locale à modifier.
+        sudoc_record : Notice Sudoc source.
         doc_type  : type de notice (print, ebook, unknown)
 
     Returns:
@@ -389,4 +389,10 @@ def replace_fields_from_sudoc(
             modified_tags.append(tag)
 
     result_record.fields.sort(key=lambda f: f.tag)
+    #debug
+    print ("fonction \n")
+    print (result_record.get_field("200").get_subfield("a"))
+    print (result_record.get_field("214").get_subfield("c"))
+    print ("fin fonction \n")
+
     return result_record, modified_tags

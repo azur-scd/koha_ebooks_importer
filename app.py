@@ -500,7 +500,7 @@ class KohaEbookApp:
             )
             return
 
-        # Construire une copie de travail dédiée à l'enrichissement Sudoc
+        # Copie des notices pour enrichissement Sudoc
         self._sudoc_enriched = [rec.clone() for rec in source_records]
         self._sudoc_report = None
 
@@ -559,6 +559,12 @@ class KohaEbookApp:
                     self._sudoc_enriched,
                     progress_cb=_progress_cb,
                 )
+# debug
+                for idx, loc in enumerate(self._sudoc_enriched):
+                    print (loc.get_field("200").get_subfield("a"))
+                    print (loc.get_field("214").get_subfield("c"))
+
+
                 self._root.after(0, _on_success)
             except Exception as exc:
                 self._root.after(0, _on_error, str(exc))
@@ -573,7 +579,7 @@ class KohaEbookApp:
             self._view.update_stat("sudoc", rep.n_found)
 
             # Afficher les données enrichies dans l'onglet dédié
-            self._view.load_sudoc_records(self._sudoc_enriched)
+            self._view.load_sudoc_enriched_records(self._sudoc_enriched)
 
             self._view.set_status(
                 f"Enrichissement Sudoc terminé : {rep.n_found} PPN trouvé(s), "

@@ -341,7 +341,25 @@ def enrich_with_sudoc(
 
                 _append_ppn_to_801(local_record, best_ppn + "[" + doc_type + "]" )
                 _append_ppn_to_830(local_record, best_ppn + "[" + doc_type + "]" )
+
+
+                print ("avant \n" )
+
+                print (local_record.get_field("200").get_subfield("a"))
+                print (local_record.get_field("214").get_subfield("c"))
+
+
+
+
                 local_record, tags_replaced = replace_fields_from_sudoc(local_record, sudoc_record, doc_type)
+
+                #debug
+                print ("après \n" )
+
+                print (local_record.get_field("200").get_subfield("a"))
+                print (local_record.get_field("214").get_subfield("c"))
+
+
                 if convert_215_to_307(local_record, sudoc_record):
                     tags_replaced.append("215→307")
                 detail.best_ppn = best_ppn
@@ -406,7 +424,7 @@ def generate_sudoc_report(
         lines.append("")
         for d in multi_with_marc:
             others      = [p for p in d.all_ppns if p != d.best_ppn]
-            lines.append(f"  #{d.marc_index + 1:>4}  PPN retenu {d.best_ppn} (autres PPN : {', '.join(others)})")
+            lines.append(f"  #{d.marc_index + 1:>4}  PPN retenu {d.best_ppn} - (autres PPN : {', '.join(others)})")
             lines.append(f"    Avant  : {d.ref_locale}")
             lines.append(f"    Sudoc  : {d.ref_sudoc}")
             lines.append(f"    Zones modifiées  : {', '.join(d.tags_replaced) or '(aucune)'}")
