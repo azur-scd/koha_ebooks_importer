@@ -337,7 +337,7 @@ def enrich_with_sudoc(
             best_ppn, sudoc_record, doc_type = select_best_record(fetched)
             if sudoc_record is not None:
                 # DEBUG
-                print ("{best_ppn} ; {doc_type}")
+                print (f"{best_ppn} ; {doc_type}")
 
                 _append_ppn_to_801(local_record, best_ppn + "[" + doc_type + "]" )
                 _append_ppn_to_830(local_record, best_ppn + "[" + doc_type + "]" )
