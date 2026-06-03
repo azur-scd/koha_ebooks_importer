@@ -397,51 +397,35 @@ def generate_sudoc_report(
     for l in report.summary_lines():
         lines.append(f"  {l}")
 
-    # ── PPN uniques avec notice MARC ───────────────────────────────────
-    unique_with_marc = [d for d in report.details
-                        if d.status == "found_unique" and d.marc_fetched]
-    h1(f"PPN UNIQUE — NOTICE MARC RÉCUPÉRÉE ({len(unique_with_marc)})")
-    if unique_with_marc:
-        for d in unique_with_marc:
-            dtype_label = {"print": "livre imprimé", "ebook": "ebook"}.get(d.doc_type, "")
-            dtype_str   = f" [{dtype_label}]" if dtype_label else ""
-            lines.append(f"  #{d.marc_index + 1:>4}  PPN {d.ppn}{dtype_str}")
-            lines.append(f"    Avant  : {d.ref_locale}")
-            lines.append(f"    Sudoc  : {d.ref_sudoc}{dtype_str}")
-            lines.append(f"    Zones  : {', '.join(d.tags_replaced) or '(aucune)'}")
-            lines.append("")
-    else:
-        lines.append("  (aucune)")
-
-    # ── PPN multiples avec notice MARC ─────────────────────────────────
+    # ── PPN trouvé(s) avec notice MARC ─────────────────────────────────
     multi_with_marc = [d for d in report.details
-                       if d.status == "found_multiple" and d.marc_fetched]
-    h1(f"PPN MULTIPLES — 1ER RETENU — NOTICE MARC RÉCUPÉRÉE ({len(multi_with_marc)})")
+                       if d.status == "found" and d.marc_fetched]
+    h1(f"PPN(s) TROUVE(S) — MEILLEUR RETENU — NOTICE MARC RÉCUPÉRÉE ({len(multi_with_marc)})")
     if multi_with_marc:
-        lines.append("  Plusieurs PPN retournés : le premier a été utilisé.")
+        lines.append("  Un ou plusieurs PPN retournés : le meilleur a été utilisé (par défaut notice de la version imprimée).")
         lines.append("")
         for d in multi_with_marc:
-            dtype_label = {"print": "livre imprimé", "ebook": "ebook"}.get(d.doc_type, "")
+            dtype_label = {"print": "livre imprimé", "ebook": "ebook", "unknown": "inconnu"}.get(d.doc_type, "")
             dtype_str   = f" [{dtype_label}]" if dtype_label else ""
-            others      = [p for p in d.all_ppns if p != d.ppn]
-            lines.append(f"  #{d.marc_index + 1:>4}  PPN {d.ppn}{dtype_str}  (autres : {', '.join(others)})")
+            others      = [p for p in d.all_ppns if p != d.best_ppn]
+            lines.append(f"  #{d.marc_index + 1:>4}  PPN retenu {d.best_ppn} - {dtype_str}  (autres PPN : {', '.join(others)})")
             lines.append(f"    Avant  : {d.ref_locale}")
-            lines.append(f"    Sudoc  : {d.ref_sudoc}{dtype_str}")
-            lines.append(f"    Zones  : {', '.join(d.tags_replaced) or '(aucune)'}")
+            lines.append(f"    Sudoc  : {d.ref_sudoc} - {dtype_str}")
+            lines.append(f"    Zones modifiées  : {', '.join(d.tags_replaced) or '(aucune)'}")
             lines.append("")
     else:
         lines.append("  (aucune)")
 
     # ── PPN trouvés mais notice MARC indisponible ──────────────────────
     found_no_marc = [d for d in report.details
-                     if d.status in ("found_unique","found_multiple") and not d.marc_fetched]
+                     if d.status == "found" and not d.marc_fetched]
     h1(f"PPN TROUVÉS — NOTICE MARC INDISPONIBLE ({len(found_no_marc)})")
     if found_no_marc:
-        lines.append("  PPN ajouté en 801$b mais zones non remplacées.")
+        lines.append("  PPN trouvé mais notice indisponible, pas d'enrichissement.")
         lines.append("")
         for d in found_no_marc:
-            unique = "unique" if d.status == "found_unique" else "multiple"
-            lines.append(f"  #{d.marc_index + 1:>4}  PPN {d.ppn} ({unique})")
+            unique = "unique" if d.status == "found" else "multiple"
+            lines.append(f"  #{d.marc_index + 1:>4}  PPN {d.best_ppn} ({unique})")
             lines.append(f"    Avant  : {d.ref_locale}")
             if len(d.all_ppns) > 1:
                 lines.append(f"    Autres PPN : {', '.join(d.all_ppns[1:])}")
