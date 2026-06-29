@@ -239,7 +239,7 @@ class MainWindow:
 
         self._prepared_placeholder = tk.Label(
             tab_prepared,
-            text="Cliquez sur « ⚙  Préparer » pour afficher les notices traitées.",
+            text="Cliquez sur «Préparer » pour afficher les notices traitées.",
             bg=COLORS["bg"], fg=COLORS["text_muted"],
             font=("Helvetica", 10, "italic"),
         )
@@ -257,7 +257,7 @@ class MainWindow:
 
         self._oai_placeholder = tk.Label(
             tab_oai,
-            text="Cliquez sur « 🌐  Récupérer OAI-PMH » pour afficher les notices Dublin Core.",
+            text="Cliquez sur « Récupérer OAI-PMH » pour afficher les notices Dublin Core.",
             bg=COLORS["bg"], fg=COLORS["text_muted"],
             font=("Helvetica", 10, "italic"),
         )
@@ -272,7 +272,7 @@ class MainWindow:
 
         self._crossed_placeholder = tk.Label(
             tab_crossed,
-            text="Cliquez sur « 🔗  Croiser UNIMARC / OAI » pour afficher les notices après croisement.",
+            text="Cliquez sur « Croiser UNIMARC / OAI » pour afficher les notices après croisement.",
             bg=COLORS["bg"], fg=COLORS["text_muted"],
             font=("Helvetica", 10, "italic"),
         )
@@ -290,7 +290,7 @@ class MainWindow:
 
         self._sudoc_placeholder = tk.Label(
             tab_sudoc,
-            text="Cliquez sur « 📚  Enrichissement Sudoc » pour afficher les notices après enrichissement.",
+            text="Cliquez sur « Enrichissement Sudoc » pour afficher les notices après enrichissement.",
             bg=COLORS["bg"], fg=COLORS["text_muted"],
             font=("Helvetica", 10, "italic"),
         )
