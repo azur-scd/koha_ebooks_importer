@@ -48,8 +48,9 @@ class KohaEbookApp:
     Contrôleur : cette classe
     """
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, use_koha_test: bool = False):
         self._root = root
+        self._use_koha_test = use_koha_test
 
         # --- Modèle ---
         self._records:     List[MarcRecord] = []
@@ -691,7 +692,8 @@ class KohaEbookApp:
         def _worker() -> None:
             try:
                 copies, report = search_and_update_001(
-                    source_records, progress_cb=_progress_cb,
+                    source_records, progress_cb=_progress_cb, 
+                    use_koha_test=self._use_koha_test,
                 )
                 self._root.after(0, _on_success, copies, report)
             except Exception as exc:
