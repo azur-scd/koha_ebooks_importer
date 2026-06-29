@@ -872,7 +872,7 @@ def propagate_access_note_to_856z(record: MarcRecord, note_acces: str = "", labe
         return
     for field in record.fields:
         if field.tag == "856":
-            field.set_subfield("z", note_acces + ". " + label_max_telechargements)
+            field.set_subfield("z", note_acces + label_max_telechargements)
 
 
 # ===========================================================================
