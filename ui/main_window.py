@@ -10,7 +10,7 @@ Assemble :
         Onglet 0 — "Données source"    : notices UNIMARC importées, sélectionnables.
         Onglet 1 — "Données préparées" : notices après préparation Koha.
         Onglet 2 — "Données OAI-PMH"   : notices Dublin Core collectées.
-        Onglet 3 — "Croisement OAI"    : notices après croisement UNIMARC/OAI.
+        Onglet 3 — "Croisement UNIMARC/OAI"  : notices après croisement UNIMARC/OAI.
         Onglet 4 — "Enrichissement Sudoc" : notices après enrichissement Sudoc.
         Onglet 5 — "Recherche Koha"       : notices après mise à jour 001 Koha.
   - StatusBar (bas) : message courant et compteur de sélection
@@ -163,7 +163,7 @@ class MainWindow:
         Onglet 0 — "Données source"    : notices UNIMARC importées, sélectionnables.
         Onglet 1 — "Données préparées" : notices après préparation Koha.
         Onglet 2 — "Données OAI-PMH"   : notices Dublin Core collectées.
-        Onglet 3 — "Croisement OAI"    : notices après croisement UNIMARC/OAI.
+        Onglet 3 — "Croisement UNIMARC/OAI" : notices après croisement UNIMARC/OAI.
         Onglet 4 — "Enrichissement Sudoc" : notices après enrichissement Sudoc.
 
         Les onglets 1-4 affichent un placeholder jusqu'au premier chargement.
@@ -268,7 +268,7 @@ class MainWindow:
 
         # ── Onglet 3 : Données croisées UNIMARC/OAI ────────────────────
         tab_crossed = tk.Frame(self._notebook, bg=COLORS["bg"])
-        self._notebook.add(tab_crossed, text="  Croisement OAI  ")
+        self._notebook.add(tab_crossed, text="  Croisement UNIMARC/OAI  ")
 
         self._crossed_placeholder = tk.Label(
             tab_crossed,
@@ -410,7 +410,7 @@ class MainWindow:
         self._table_oai.load_records([])
         self.update_stat("oai", 0)
 
-    # ── Onglet croisement OAI ──────────────────────────────────────────
+    # ── Onglet croisement UNIMARC/OAI ──────────────────────────────────────
 
     def load_oai_enriched_records(self, records: List[MarcRecord]) -> None:
         """
