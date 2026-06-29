@@ -76,6 +76,8 @@ ZONE_830_UNIMARC_ET_DC_ET_SUDOC_EBOOK = {
 # ---------------------------------------------------------------------------
 # URL de base du serveur SRU Koha (sans paramètres)
 KOHA_SRU_BASE_URL = "https://catalogue-bu-univ-cotedazur.biblibre.fr/biblios"
+# URL de base du serveur SRU Koha test (sans paramètres)
+KOHA_TEST_SRU_BASE_URL = "https://catalogue-bu-cotedazur-koha.test.biblibre.eu/"
  
 # Critères de filtrage des notices Koha récupérées
 KOHA_FILTER_099T = "LIVRE_EL"        # 099$t : type de document attendu
