@@ -677,18 +677,20 @@ def _build_access_note(plateforme: str, licence: dict) -> str:
         if plateforme else ""
     )
 
-    nb_tel = licence.get("telechargements")
-    nb_sim = licence.get("simultanees")
+    nb_telechargements = licence.get("telechargements")
+    nb_acces_simultanes = licence.get("simultanees")
+    label_acces_simultanes = "accès simultané" if nb_acces_simultanes == 1 else "accès simultanés"
 
-    if nb_tel is not None and nb_sim is not None and nb_sim < 1000:
+
+    if nb_telechargements is not None and nb_acces_simultanes is not None and nb_acces_simultanes < 1000:
         return (
             f"Accès sur authentification. "
             f"{plateforme_str}"
-            f"{nb_sim} accès simultanés. "
-            f"{nb_tel} téléchargements"
+            f"{nb_acces_simultanes} {label_acces_simultanes}. "
+            f"{nb_telechargements} téléchargements"
         )
-    elif nb_tel is not None:
-        sim_str = f"{nb_sim} accès simultanés. " if nb_sim is not None else ""
+    elif nb_telechargements is not None:
+        sim_str = f"{nb_acces_simultanes} {label_acces_simultanes}. " if nb_acces_simultanes is not None else ""
         return (
             f"Accès sur authentification. "
             f"{plateforme_str}"
