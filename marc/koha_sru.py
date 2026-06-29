@@ -67,7 +67,7 @@ except ImportError:
         "https://catalogue-bu-univ-cotedazur.biblibre.fr/biblios"
     )
     KOHA_TEST_SRU_BASE_URL = (
-        "https://catalogue-bu-cotedazur-koha.test.biblibre.eu/"
+        "https://catalogue-bu-cotedazur-koha.test.biblibre.eu/biblios"
     )
 
 KOHA_SRU_TIMEOUT      = 15   # secondes
