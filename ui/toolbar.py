@@ -15,7 +15,7 @@ class Toolbar(tk.Frame):
 
     callbacks : dict  nom_action → callable
         Clés : 'import', 'prepare', 'oai_fetch', 'oai_match',
-                'sudoc_enrich', 'export', 'reset', 'quit'
+               'sudoc_enrich', 'export', 'reset', 'quit'
     """
 
     _BUTTONS = [
@@ -54,17 +54,8 @@ class Toolbar(tk.Frame):
             font=("Courier", 7), justify=tk.LEFT,
         ).pack(anchor=tk.W)
 
-        # ── Séparateur vertical ───────────────────────────────────────
-        tk.Frame(self, width=1, bg=COLORS["border"]).pack(
-            side=tk.LEFT, fill=tk.Y, padx=6, pady=2
-        )
-
         # ── Boutons ───────────────────────────────────────────────────
         for label, key, style, sep in self._BUTTONS:
-            if sep:
-                tk.Frame(self, width=1, bg=COLORS["border"]).pack(
-                    side=tk.LEFT, fill=tk.Y, padx=4, pady=2
-                )
             btn = tk.Button(
                 self,
                 text=label,
@@ -113,7 +104,4 @@ class Toolbar(tk.Frame):
 
     def get_button(self, key: str) -> tk.Button:
         """Retourne le widget Button associé à une clé (pour focus, etc.)."""
-        return self._buttons.get(key)
-
-    def get_button(self, key: str) -> tk.Button:
         return self._buttons.get(key)
