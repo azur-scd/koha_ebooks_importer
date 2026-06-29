@@ -63,8 +63,9 @@ class KohaSearchReport:
 
 
 def search_and_update_001(
-    records:     List[MarcRecord],
-    progress_cb: Optional[callable] = None,
+    records:        List[MarcRecord],
+    progress_cb:    Optional[callable] = None,
+    use_koha_test:  bool = False,
 ) -> tuple[List[MarcRecord], KohaSearchReport]:
     """
     Pour chaque notice, cherche dans Koha par EAN et met à jour le 001
@@ -73,8 +74,9 @@ def search_and_update_001(
     Travaille sur des COPIES des notices (les originales ne sont pas modifiées).
 
     Args:
-        records     : Liste de MarcRecord (notices enrichies Sudoc).
-        progress_cb : Callback(n_done, n_total) pour la progression.
+        records        : Liste de MarcRecord (notices enrichies Sudoc).
+        progress_cb    : Callback(n_done, n_total) pour la progression.
+        use_koha_test  : Si True, utilise l'URL de Koha test au lieu de la production.
 
     Returns:
         (liste_copiée_et_mise_à_jour, rapport)
@@ -105,7 +107,7 @@ def search_and_update_001(
         if elapsed < KOHA_REQUEST_DELAY:
             time.sleep(KOHA_REQUEST_DELAY - elapsed)
 
-        result = search_koha_by_ean(ean)
+        result = search_koha_by_ean(ean, use_koha_test=use_koha_test)
         last_req = time.monotonic()
 
         if result.error:
