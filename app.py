@@ -249,7 +249,7 @@ class KohaEbookApp:
             notices_exportees = self._prepared
             niveau_enrichissement = "notices UNIMARC BOOD"
 
-           
+            
 
         filetypes = [
             (label, f"*{ext}")
@@ -595,6 +595,7 @@ class KohaEbookApp:
             self._view.set_button_enabled("export", True)
             self._view.set_button_enabled("oai_fetch", True)
             self._view.set_button_enabled("sudoc_enrich", True)
+            self._view.set_button_enabled("koha_search", True)
 
             lines = rep.summary_lines()
             lines.append("")
@@ -616,6 +617,7 @@ class KohaEbookApp:
             self._view.set_button_enabled("export", True)
             self._view.set_button_enabled("oai_fetch", True)
             self._view.set_button_enabled("sudoc_enrich", True)
+            self._view.set_button_enabled("koha_search", True)
 
         import threading
         threading.Thread(target=_worker, daemon=True).start()
@@ -656,12 +658,14 @@ class KohaEbookApp:
         Si exactement 1 notice Koha filtrée est trouvée, le 001 est remplacé.
         Affiche les résultats dans l'onglet "Recherche Koha".
         """
-        if not self._prepared:
+        source_records = self._sudoc_enriched if self._sudoc_enriched else self._prepared
+
+        if not source_records:
             messagebox.showwarning("Données manquantes",
                 "Veuillez d'abord enrichir les notices avec le Sudoc.")
             return
 
-        n = len(self._prepared)
+        n = len(source_records)
         confirm = messagebox.askyesno(
             "Recherche Koha",
             f"{n} notice(s) à traiter.\n\n"
@@ -687,7 +691,7 @@ class KohaEbookApp:
         def _worker() -> None:
             try:
                 copies, report = search_and_update_001(
-                    self._prepared, progress_cb=_progress_cb,
+                    source_records, progress_cb=_progress_cb,
                 )
                 self._root.after(0, _on_success, copies, report)
             except Exception as exc:
