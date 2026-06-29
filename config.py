@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 # Identité de l'application
 # ---------------------------------------------------------------------------
 APP_TITLE   = "Signalement ebooks biblioondemand"
-APP_VERSION = "1.0.2"
+APP_VERSION = "1.0.3"
 
 WINDOW_MIN_W = 1100
 WINDOW_MIN_H = 650
