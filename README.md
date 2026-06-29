@@ -38,19 +38,22 @@ Le traitement suit une chaîne logique en plusieurs étapes :
 
 4. **Préparation pour Koha**  
    L’application applique des transformations métier sur les notices sélectionnées pour les importer dans Koha : nettoyage et harmonisation des données, ajout de champs spécifiques à Koha (en particulier 099 et 995)
-   L'utilisateur peut poursuivre le traitement ou exporter les notices (étape 8). 
+   L'utilisateur peut poursuivre le traitement ou exporter les notices (étape 9). 
 
 5. **Récupération des notices en Dublin Core via OAI-PMH**  
    Récupération des notices en Dublin Core depuis l'entrepôt OAI-PMH du fournisseur
 
 6. **Enrichissement des notices à partir des notices Dublin Core**  
    Croisement des notices en fonction de l'EAN (en supprimant le suffixe souvent présent dans les notices DC) et enrichissement. L'intérêt principal est de récupérer les liens vers les vignettes, rarement présent en UNIMARC, et l'ISBN, souvent fictif dans les notices UNIMARC.
-   L'utilisateur peut poursuivre le traitement ou exporter les notices (étape 8).
+   L'utilisateur peut poursuivre le traitement ou exporter les notices (étape 9).
    
 7. **Enrichissement des notices à partir des notices SUDOC**  
    Récupération des données SUDOC à partir de l'ISBN et enrichissement des notices, lorsqu'une notice SUDOC est trouvée. L'application privilégie les notices de documents physiques, et à défaut utilise les notices d'ebook. L'intérêt principal est de récupérer le résumé Sudoc, la table des matières, l'indexation sujet, les formes normalisées des auteurs.
    
-8. **Export en MARCXML**  
+8. **Recherche des notices Koha**  
+   Vérifie si les notices sont déjà dans Koha (dans le cas d'une mise à jour) : interroge Koha par SRU en se basant sur l'EAN
+   
+9. **Export en MARCXML**  
    Export des notices en MARCXML, prêtes à être importées dans Koha
 
    
