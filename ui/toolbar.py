@@ -24,6 +24,7 @@ class Toolbar(tk.Frame):
         ("Récupérer OAI-PMH",        "oai_fetch",    "primary", True),
         ("Croiser UNIMARC / OAI",    "oai_match",    "primary", False),
         ("Enrichissement Sudoc",      "sudoc_enrich", "primary", False),
+        ("Recherche Koha",             "koha_search",  "primary", False),
         ("Exporter en MARCXML",       "export",       "primary", True),
         ("Réinitialiser",             "reset",        "danger",  True),
         ("Quitter",                   "quit",         "danger",  True),

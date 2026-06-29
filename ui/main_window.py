@@ -12,6 +12,7 @@ Assemble :
         Onglet 2 — "Données OAI-PMH"   : notices Dublin Core collectées.
         Onglet 3 — "Croisement OAI"    : notices après croisement UNIMARC/OAI.
         Onglet 4 — "Enrichissement Sudoc" : notices après enrichissement Sudoc.
+        Onglet 5 — "Recherche Koha"       : notices après mise à jour 001 Koha.
   - StatusBar (bas) : message courant et compteur de sélection
 
 Ce module ne contient que la logique de présentation.
@@ -301,6 +302,24 @@ class MainWindow:
         )
         self._sudoc_table_visible = False
 
+        # ── Onglet 5 : Recherche Koha ───────────────────────────────
+        tab_koha = tk.Frame(self._notebook, bg=COLORS["bg"])
+        self._notebook.add(tab_koha, text="  Recherche Koha  ")
+
+        self._koha_placeholder = tk.Label(
+            tab_koha,
+            text="Cliquez sur « Recherche Koha » pour afficher les notices après mise à jour du 001.",
+            bg=COLORS["bg"], fg=COLORS["text_muted"],
+            font=("Helvetica", 10, "italic"),
+        )
+        self._koha_placeholder.pack(expand=True)
+
+        self._table_koha = RecordsTable(
+            tab_koha, columns=PREPARED_COLUMNS, on_selection_change=None,
+            csv_filename="notices_koha.csv",
+        )
+        self._koha_table_visible = False
+
         # Onglet source sélectionné par défaut
         self._notebook.select(0)
 
@@ -434,6 +453,25 @@ class MainWindow:
             self._sudoc_placeholder.pack(expand=True)
             self._sudoc_table_visible = False
         self._table_sudoc.load_records([])
+
+    # ── Onglet recherche Koha ──────────────────────────────────────────
+    
+    def load_koha_records(self, records: List[MarcRecord]) -> None:
+        """Charge les notices après recherche Koha et bascule sur l'onglet."""
+        if not self._koha_table_visible:
+            self._koha_placeholder.pack_forget()
+            self._table_koha.pack(fill=tk.BOTH, expand=True)
+            self._koha_table_visible = True
+        self._table_koha.load_records(records)
+        self._notebook.select(5)
+
+    def reset_koha_tab(self) -> None:
+        """Vide l'onglet Koha et réaffiche le placeholder."""
+        if self._koha_table_visible:
+            self._table_koha.pack_forget()
+            self._koha_placeholder.pack(expand=True)
+            self._koha_table_visible = False
+        self._table_koha.load_records([])
 
     # ── Statistiques et état ───────────────────────────────────────────
 

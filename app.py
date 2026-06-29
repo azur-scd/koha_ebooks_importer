@@ -3,7 +3,8 @@
 """
 app.py — Contrôleur principal de l'application
 ===============================================
-Orchestre les interactions entre la vue (ui/) et la couche MARC (marc/).
+Orchestre les interactions entre la vue (ui/), la couche MARC (marc/)
+et la couche OAI
 
 Gestion des états des boutons :
   Démarrage          : seul "Importer" est actif, focus dessus.
@@ -29,6 +30,7 @@ from marc.reader import MarcRecord, parse_iso2709
 from marc.transformations import prepare_records_for_koha
 from marc.deduplicator import deduplicate_marc, DeduplicationReport, generate_dedup_report
 from marc.sudoc_enricher import enrich_with_sudoc, SudocEnrichmentReport, generate_sudoc_report
+from marc.koha_search import search_and_update_001, KohaSearchReport, generate_koha_search_report
 from marc.exporters import EXPORTERS
 from oai.harvester import harvest_oai, deduplicate_oai, OaiRecord, OaiHarvestError, DeduplicationResult
 from oai.matcher   import match_records, MatchResult
@@ -59,6 +61,9 @@ class KohaEbookApp:
         self._oai_enriched:       List[MarcRecord]            = []   # Notices après croisement OAI
         self._sudoc_enriched:    List[MarcRecord] = []
         self._sudoc_report:  Optional[SudocEnrichmentReport] = None
+        self._koha_records:  List[MarcRecord]                 = []
+        self._koha_report:   Optional[KohaSearchReport]       = None
+
 
         # --- Vue ---
         self._view = MainWindow(
@@ -83,6 +88,7 @@ class KohaEbookApp:
             "oai_fetch":    self._action_oai_fetch,
             "oai_match":    self._action_oai_match,
             "sudoc_enrich": self._action_sudoc_enrich,
+            "koha_search":  self._action_koha_search,
             "export":       self._action_export,
             "reset":        self._action_reset,
             "quit":         self._action_quit,
@@ -100,6 +106,7 @@ class KohaEbookApp:
         self._view.set_button_enabled("oai_fetch",    False)
         self._view.set_button_enabled("oai_match",    False)
         self._view.set_button_enabled("sudoc_enrich", False)
+        self._view.set_button_enabled("koha_search",  False)
         self._view.set_button_enabled("export",       False)
         self._view.set_button_enabled("reset",        True)
         self._view.set_button_enabled("quit",         True)
@@ -215,10 +222,11 @@ class KohaEbookApp:
             # Afficher les notices préparées dans l'onglet 2
             self._view.load_prepared_records(self._prepared)
 
-            # Activer l'export, la collecte OAI et l'enrichissement Sudoc
+            # Activer l'export, la collecte OAI, l'enrichissement Sudoc, la recherche Koha
             self._view.set_button_enabled("export",       True)
             self._view.set_button_enabled("oai_fetch",    True)
             self._view.set_button_enabled("sudoc_enrich", True)
+            self._view.set_button_enabled("koha_search",  True)
 
         except Exception as exc:
             self._view.set_status(f"Erreur : {exc}", level="error")
@@ -639,6 +647,108 @@ class KohaEbookApp:
         except Exception as exc:
             messagebox.showerror("Erreur d'export", str(exc))
 
+    def _action_koha_search(self) -> None:
+        """
+        Recherche les notices dans Koha par EAN et met à jour le 001,
+        dans un thread séparé pour ne pas geler l'interface.
+
+        Travaille sur des COPIES des notices enrichies par le Sudoc.
+        Si exactement 1 notice Koha filtrée est trouvée, le 001 est remplacé.
+        Affiche les résultats dans l'onglet "Recherche Koha".
+        """
+        if not self._prepared:
+            messagebox.showwarning("Données manquantes",
+                "Veuillez d'abord enrichir les notices avec le Sudoc.")
+            return
+
+        n = len(self._prepared)
+        confirm = messagebox.askyesno(
+            "Recherche Koha",
+            f"{n} notice(s) à traiter.\n\n"
+            "L'opération interroge le catalogue Koha notice par notice.\n"
+            "Elle peut prendre plusieurs minutes selon le volume.\n\n"
+            "Lancer la recherche Koha ?",
+        )
+        if not confirm:
+            return
+
+        for key in ("koha_search", "sudoc_enrich", "export", "prepare",
+                    "import", "oai_fetch", "oai_match", "reset", "quit"):
+            self._view.set_button_enabled(key, False)
+
+        self._view.set_status("Recherche Koha en cours…", level="info")
+
+        def _progress_cb(n_done: int, n_total: int) -> None:
+            self._root.after(0, lambda: self._view.set_status(
+                f"Recherche Koha : {n_done} / {n_total} notices traitées…",
+                level="info",
+            ))
+
+        def _worker() -> None:
+            try:
+                copies, report = search_and_update_001(
+                    self._prepared, progress_cb=_progress_cb,
+                )
+                self._root.after(0, _on_success, copies, report)
+            except Exception as exc:
+                self._root.after(0, _on_error, str(exc))
+
+        def _on_success(copies, report) -> None:
+            self._koha_records = copies
+            self._koha_report  = report
+
+            self._view.load_koha_records(self._koha_records)
+            self._view.set_status(
+                f"Recherche Koha terminée : {report.n_updated} 001 mis à jour "
+                f"sur {report.n_total} notice(s).",
+                level="success",
+            )
+
+            self._set_initial_state()
+            self._view.set_button_enabled("export",       True)
+            self._view.set_button_enabled("oai_fetch",    True)
+            self._view.set_button_enabled("sudoc_enrich", True)
+            self._view.set_button_enabled("koha_search",  True)
+
+            lines = report.summary_lines()
+            lines.append("")
+            lines.append("Voulez-vous télécharger le rapport détaillé ?")
+            if messagebox.askyesno("Recherche Koha — Résultat", "\n".join(lines)):
+                self._download_koha_log()
+
+        def _on_error(err: str) -> None:
+            self._view.set_status(f"Erreur Koha : {err}", level="error")
+            messagebox.showerror("Erreur Koha", err)
+            self._set_initial_state()
+            self._view.set_button_enabled("export",       True)
+            self._view.set_button_enabled("oai_fetch",    True)
+            self._view.set_button_enabled("sudoc_enrich", True)
+            self._view.set_button_enabled("koha_search",  True)
+
+        import threading
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _download_koha_log(self) -> None:
+        """Ouvre un dialogue de sauvegarde et écrit le rapport Koha."""
+        if self._koha_report is None:
+            return
+        import datetime
+        default_name = f"koha_search_{datetime.date.today()}.txt"
+        path = filedialog.asksaveasfilename(
+            title="Enregistrer le rapport de recherche Koha",
+            defaultextension=".txt",
+            initialfile=default_name,
+            filetypes=[("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*")],
+        )
+        if not path:
+            return
+        try:
+            generate_koha_search_report(self._koha_report, path)
+            self._view.set_status(f"Rapport Koha exporté : {path}", level="success")
+            messagebox.showinfo("Rapport exporté", f"Rapport enregistré :\n{path}")
+        except Exception as exc:
+            messagebox.showerror("Erreur d'export", str(exc))
+
     def _action_quit(self) -> None:
         """Ferme l'application proprement après confirmation."""
         if messagebox.askokcancel("Quitter", "Quitter l'application ?"):
@@ -659,6 +769,8 @@ class KohaEbookApp:
         self._oai_enriched       = []
         self._sudoc_enriched       = []
         self._sudoc_report  = None
+        self._koha_records  = []
+        self._koha_report   = None
 
         # Vider les tableaux
         self._view.load_records([])
@@ -666,6 +778,8 @@ class KohaEbookApp:
         self._view.reset_oai_tab()
         self._view.reset_oai_enriched_tab()
         self._view.reset_sudoc_tab()
+        self._view.reset_koha_tab()
+
 
         # Remettre les compteurs et l'état
         self._view.update_stat("total",    0)
