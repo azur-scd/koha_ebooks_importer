@@ -629,8 +629,8 @@ def parse_zone_917(record: MarcRecord) -> dict:
 
     Returns:
         Dictionnaire avec les cles presentes parmi :
-          "telechargements" (int) : valeur de $e
-          "simultanees"     (int) : valeur de $f
+          "telechargements" : valeur de $e
+          "simultanees"     : valeur de $f
         Les cles absentes dans la notice sont absentes du dictionnaire.
     """
     result = {}
@@ -642,33 +642,23 @@ def parse_zone_917(record: MarcRecord) -> dict:
     val_f = zone_917.get_subfield("f")
 
     if val_e is not None:
-        try:
-            result["telechargements"] = int(val_e.strip())
-        except ValueError:
-            pass  # valeur non numerique : on ignore
-
+        result["telechargements"] = val_e.strip()
+    
     if val_f is not None:
-        try:
-            result["simultanees"] = int(val_f.strip())
-        except ValueError:
-            pass
-
+        result["simultanees"] = val_f.strip()
+        
     return result
-
 
 def _build_access_note(plateforme: str, licence: dict) -> str:
     """
     Construit le texte de la note d'accès (371$a) selon les règles métier.
 
     Logique :
-      - Si $e (téléchargements) ET $f (simultanés) présents, et $f < 1000 :
-          "Accès sur authentification. Consultation sur la plateforme <P>.
-           <F> accès simultanés. <E> téléchargements"
-      - Si $e présent mais $f absent ou $f >= 1000 :
+      - Si nb accès simultanés présent et < 1000 :
           "Accès sur authentification. Consultation sur la plateforme <P>.
            <F> accès simultanés."
-      - Si $e absent :
-          "Accès sur authentification. Consultation sur la plateforme <P>"
+      - Sinon 
+           "Accès sur authentification. Consultation sur la plateforme <P>.
 
     La mention de la plateforme est incluse seulement si elle est connue.
     """
@@ -676,30 +666,21 @@ def _build_access_note(plateforme: str, licence: dict) -> str:
         f"Consultation sur la plateforme {plateforme}. "
         if plateforme else ""
     )
+    try:
+        nb_acces_simultanes = int(licence.get("simultanees"))
+    except ValueError:
+        nb_acces_simultanes = None
 
-    nb_telechargements = licence.get("telechargements")
-    nb_acces_simultanes = licence.get("simultanees")
-    label_acces_simultanes = "accès simultané" if nb_acces_simultanes == 1 else "accès simultanés"
-
-
-    if nb_telechargements is not None and nb_acces_simultanes is not None and nb_acces_simultanes < 1000:
-        return (
-            f"Accès sur authentification. "
-            f"{plateforme_str}"
-            f"{nb_acces_simultanes} {label_acces_simultanes}. "
-            f"{nb_telechargements} téléchargements"
-        )
-    elif nb_telechargements is not None:
-        sim_str = f"{nb_acces_simultanes} {label_acces_simultanes}. " if nb_acces_simultanes is not None else ""
-        return (
-            f"Accès sur authentification. "
-            f"{plateforme_str}"
-            f"{sim_str}"
-        ).rstrip()
+    if nb_acces_simultanes is None : 
+        acces_simultanes_str = ""
+    elif nb_acces_simultanes == 1:
+        acces_simultanes_str = f"{nb_acces_simultanes} accès simultané. "
+    elif nb_acces_simultanes > 1000 :
+        acces_simultanes_str = ""
     else:
-        note = f"Accès sur authentification. {plateforme_str}".rstrip(". ")
-        return note
-
+        acces_simultanes_str == f"{nb_acces_simultanes} accès simultanés. "
+        
+    return (f"Accès sur authentification. {plateforme_str} {acces_simultanes_str}")
 
 def add_zone_371(record: MarcRecord, plateforme: str, licence: dict) -> str:
     """
@@ -829,6 +810,7 @@ def add_zone_995(
     order_index: int,
     timestamp: datetime | None = None,
     note_acces: str = "",
+    label_max_telechargements : str = ""
 ) -> None:
     """
     Ajoute la zone 995 (donnees d'exemplaire Koha) a la notice.
@@ -856,15 +838,17 @@ def add_zone_995(
     field.add_subfield("f", barcode)
     for code, value in ZONE_995.items():
         field.add_subfield(code, value)
+
     if note_acces:
-        field.add_subfield("z", note_acces)
+        field.add_subfield("z", note_acces +". " + label_max_telechargements)
 
     record.add_field(field)
 
 
-def propagate_note_to_856z(record: MarcRecord, note_acces: str) -> None:
+def propagate_access_note_to_856z(record: MarcRecord, note_acces: str = "", label_max_telechargements:str = "") -> None:
     """
     Copie la note d'acces (371$a) en $z sur tous les 856 d'acces au document
+    en ajoutant le nombre de téléchargements max
     (les 856 de vignettes ont deja ete convertis en 859 a ce stade).
 
     Args:
@@ -875,7 +859,7 @@ def propagate_note_to_856z(record: MarcRecord, note_acces: str) -> None:
         return
     for field in record.fields:
         if field.tag == "856":
-            field.set_subfield("z", note_acces)
+            field.set_subfield("z", note_acces + ". " + label_max_telechargements)
 
 
 # ===========================================================================
@@ -979,9 +963,10 @@ def prepare_record_for_koha(
 
     # Zone 371 enrichie + recuperation du texte pour propagation
     note_acces = add_zone_371(prepared, plateforme=plateforme, licence=licence)
+    label_max_telechargements = f"{licence.get("telechargements")} téléchargements max"
 
-    # Propagation de la note en 856$z (sur les 856 d'acces restants)
-    propagate_note_to_856z(prepared, note_acces)
+    # Propagation de la note d'accès en 856$z (sur les 856 d'acces restants)
+    propagate_access_note_to_856z(prepared, note_acces, label_max_telechargements)
 
     # -- Zones Koha ----------------------------------------------------------
     copy_001_to_039a(prepared)
@@ -990,7 +975,7 @@ def prepare_record_for_koha(
     add_zone_830(prepared)
     # La note est passee a add_zone_995 pour etre copiee en 995$z
     add_zone_995(prepared, order_index=order_index, timestamp=timestamp,
-                 note_acces=note_acces)
+                 note_acces=note_acces, label_max_telechargements=label_max_telechargements)
 
     # -- Tri final par ordre numerique de tag (001 -> 999) -------------------
     # Les zones de controle (001-009, tag < "010") sont placees en tete,
