@@ -678,7 +678,7 @@ def _build_access_note(plateforme: str, licence: dict) -> str:
     elif nb_acces_simultanes > 1000 :
         acces_simultanes_str = ""
     else:
-        acces_simultanes_str == f"{nb_acces_simultanes} accès simultanés. "
+        acces_simultanes_str = f"{nb_acces_simultanes} accès simultanés. "
         
     return (f"Accès sur authentification. {plateforme_str} {acces_simultanes_str}")
 
