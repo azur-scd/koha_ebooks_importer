@@ -815,8 +815,13 @@ def add_zone_995(
     """
     Ajoute la zone 995 (donnees d'exemplaire Koha) a la notice.
 
-    Code-barres ($f) : <BARCODE_PREFIX> + <AAMMJJHHmmss> + <ordre 4 chiffres>
-    Exemple : BOD2606151423590042  (19 caracteres, limite Koha : 20)
+    Code-barres ($f) : <BARCODE_PREFIX> + <073$a>
+    
+    Si le champ 073$a est absent, revient au format par défaut:
+    <BARCODE_PREFIX> + <AAMMJJHHmmss> + <ordre 4 chiffres>
+    
+    Exemple (073$a présent) : BOD9782075126655
+    Exemple (073$a absent)  : BOD2606151423590042  (19 caracteres, limite Koha : 20)
 
     Sous-zones : $f code-barres, puis toutes les sous-zones de config.ZONE_995,
     et si note_acces est fournie, un $z avec cette note.
@@ -832,7 +837,15 @@ def add_zone_995(
 
     record.remove_fields("995")
 
-    barcode = f"{BARCODE_PREFIX}{timestamp.strftime('%y%m%d%H%M%S')}{order_index:04d}"
+    # Chercher le contenu de 073$a (EAN)
+    ean = record.get_value("073", "a")
+    
+    if ean and ean.strip():
+        # Si 073$a existe et n'est pas vide, l'utiliser directement
+        barcode = f"{BARCODE_PREFIX}{ean.strip()}"
+    else:
+        # Sinon, revenir au format par défaut avec timestamp
+        barcode = f"{BARCODE_PREFIX}{timestamp.strftime('%y%m%d%H%M%S')}{order_index:04d}"
 
     field = MarcField(tag="995", ind1=" ", ind2=" ")
     field.add_subfield("f", barcode)
