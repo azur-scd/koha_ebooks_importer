@@ -34,7 +34,8 @@ Filtrage des notices retournées :
   pour le même ebook, afin d'éviter les doublons lors d'un import futur.
 
 Configuration dans config.py :
-  KOHA_SRU_BASE_URL : URL de base du serveur SRU Koha
+  KOHA_SRU_BASE_URL : URL de base du serveur SRU Koha production
+  KOHA_TEST_SRU_BASE_URL : URL de base du serveur SRU Koha test
 
 Pour étendre :
   - Ajouter d'autres critères de filtrage via les paramètres de `search_koha_by_ean()`.
@@ -60,10 +61,13 @@ from marc.reader import MarcField, MarcRecord
 
 # URL de base du serveur SRU Koha (configurable dans config.py)
 try:
-    from config import KOHA_SRU_BASE_URL
+    from config import KOHA_SRU_BASE_URL, KOHA_TEST_SRU_BASE_URL
 except ImportError:
     KOHA_SRU_BASE_URL = (
         "https://catalogue-bu-univ-cotedazur.biblibre.fr/biblios"
+    )
+    KOHA_TEST_SRU_BASE_URL = (
+        "https://catalogue-bu-cotedazur-koha.test.biblibre.eu/"
     )
 
 KOHA_SRU_TIMEOUT      = 15   # secondes
@@ -119,10 +123,11 @@ class KohaSearchResult:
 
 def search_koha_by_ean(
     ean:          str,
-    base_url:     str = KOHA_SRU_BASE_URL,
+    base_url:     str = None,
     max_records:  int = KOHA_SRU_MAX_RECORDS,
     filter_t:     str = KOHA_FILTER_099T,
     filter_b:     str = KOHA_FILTER_801B,
+    use_koha_test: bool = False,
 ) -> KohaSearchResult:
     """
     Recherche des notices Koha correspondant à un EAN via le protocole SRU.
@@ -133,20 +138,26 @@ def search_koha_by_ean(
       - 801$b contient le mot filter_b  (défaut : "biblioondemand" — source d'import)
 
     Args:
-        ean         : EAN (ou ISBN) à rechercher.
-        base_url    : URL de base du serveur SRU Koha.
-        max_records : Nombre maximum de notices demandées (défaut : 10).
-        filter_t    : Valeur attendue en 099$t (type de document, requis).
-        filter_b    : Mot à rechercher dans 801$b (source d'import, défaut : "biblioondemand").
+        ean           : EAN (ou ISBN) à rechercher.
+        base_url      : URL de base du serveur SRU Koha (optionnel, déterminée automatiquement).
+        max_records   : Nombre maximum de notices demandées (défaut : 10).
+        filter_t      : Valeur attendue en 099$t (type de document, requis).
+        filter_b      : Mot à rechercher dans 801$b (source d'import, défaut : "biblioondemand").
+        use_koha_test : Si True, utilise l'URL de Koha test. Si False, utilise la production.
 
     Returns:
         KohaSearchResult avec les notices filtrées et les statistiques.
     """
+    # Déterminer l'URL à utiliser si non spécifiée
+    if base_url is None:
+        base_url = KOHA_TEST_SRU_BASE_URL if use_koha_test else KOHA_SRU_BASE_URL
+    
     result = KohaSearchResult(ean=ean)
 
     print(f"\n[SRU SEARCH] ────────────────────────────────────────────────")
     print(f"[SRU] EAN recherché: {ean}")
     print(f"[SRU] URL base: {base_url}")
+    print(f"[SRU] Mode: {'TEST' if use_koha_test else 'PRODUCTION'}")
     print(f"[SRU] Filtres attendus: 099$t='{filter_t}', 801$b doit contenir '{filter_b}'")
 
     # Construire l'URL SRU
