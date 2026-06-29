@@ -23,21 +23,44 @@ Pour faire évoluer l'outil :
 - Ajouter de nouveaux formats d'export dans marc/exporters.py
 - Étendre l'interface dans ui/
 - Modifier les paramètres dans config.py
-
-Usage:
-    python main.py                # Lance avec l'URL Koha de production
-    python main.py --kohatest     # Lance avec l'URL Koha de test
 """
 
 import sys
+import argparse
 import tkinter as tk
 from app import KohaEbookApp
 
 
 def main():
     """Point d'entrée principal de l'application."""
-    # Déterminer si on utilise Koha test
-    use_koha_test = "--kohatest" in sys.argv
+    parser = argparse.ArgumentParser(
+        prog="python main.py",
+        description="Koha BOOD Ebook Importer — Outil graphique de gestion de l'import d'ebooks BOOD",
+        epilog="""
+Exemples d'utilisation :
+  python main.py                  # Lance avec l'URL Koha de production
+  python main.py --kohatest       # Lance avec l'URL Koha de test
+  python main.py -h               # Affiche cette aide
+
+Fonctionnalités principales :
+- Import de fichiers UNIMARC ISO2709 (UTF-8)
+- Affichage et sélection des notices
+- Préparation des notices pour Koha
+- Croisement avec les données OAI-PMH
+- Enrichissement via le Sudoc
+- Recherche dans le catalogue Koha
+- Export en MARCXML UTF-8
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    
+    parser.add_argument(
+        "--kohatest",
+        action="store_true",
+        help="Utilise l'URL du serveur Koha de test au lieu de la production",
+    )
+    
+    args = parser.parse_args()
     
     root = tk.Tk()
     root.title("Koha BOOD Ebook Importer")
@@ -49,7 +72,7 @@ def main():
     h = root.winfo_screenheight()
     root.geometry(f"1200x750+{(w - 1200) // 2}+{(h - 750) // 2}")
 
-    app = KohaEbookApp(root, use_koha_test=use_koha_test)
+    app = KohaEbookApp(root, use_koha_test=args.kohatest)
     root.mainloop()
 
 
