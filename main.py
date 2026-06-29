@@ -23,6 +23,10 @@ Pour faire évoluer l'outil :
 - Ajouter de nouveaux formats d'export dans marc/exporters.py
 - Étendre l'interface dans ui/
 - Modifier les paramètres dans config.py
+
+Usage:
+    python main.py                # Lance avec l'URL Koha de production
+    python main.py --kohatest     # Lance avec l'URL Koha de test
 """
 
 import sys
@@ -32,6 +36,9 @@ from app import KohaEbookApp
 
 def main():
     """Point d'entrée principal de l'application."""
+    # Déterminer si on utilise Koha test
+    use_koha_test = "--kohatest" in sys.argv
+    
     root = tk.Tk()
     root.title("Koha BOOD Ebook Importer")
     root.minsize(1100, 650)
@@ -42,7 +49,7 @@ def main():
     h = root.winfo_screenheight()
     root.geometry(f"1200x750+{(w - 1200) // 2}+{(h - 750) // 2}")
 
-    app = KohaEbookApp(root)
+    app = KohaEbookApp(root, use_koha_test=use_koha_test)
     root.mainloop()
 
 
