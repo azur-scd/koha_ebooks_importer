@@ -173,6 +173,8 @@ def search_koha_by_ean(
         with urllib.request.urlopen(req, timeout=KOHA_SRU_TIMEOUT) as resp:
             raw = resp.read()
         print(f"[SRU] ✅ Réponse reçue: {len(raw)} bytes")
+        raw_text = raw.decode("utf-8", errors="replace")
+        print(f"[SRU] Contenu brut de la réponse:\n{raw_text}")
     except urllib.error.HTTPError as exc:
         result.error = f"HTTP {exc.code} {exc.reason}"
         print(f"[SRU] ❌ Erreur HTTP: {result.error}")
