@@ -21,7 +21,6 @@ Comportement :
 from __future__ import annotations
 
 import json
-import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional
@@ -83,6 +82,20 @@ class SudocEnrichmentReport:
             f"Notices sans ISBN                     : {self.n_no_isbn}",
             f"Erreurs réseau / serveur              : {self.n_error}",
         ]
+
+
+def generate_sudoc_report(report: SudocEnrichmentReport, path: str) -> None:
+    """Écrit un rapport texte minimal de l'enrichissement Sudoc."""
+    lines = report.summary_lines()
+    lines.append("")
+    for d in report.details:
+        lines.append(f"#{d.marc_index + 1} [{d.status}] ISBN={d.isbn or '-'} PPN={d.best_ppn or '-'}")
+        if d.error_msg:
+            lines.append(f"  erreur : {d.error_msg}")
+        if d.tags_replaced:
+            lines.append(f"  zones : {', '.join(d.tags_replaced)}")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
 
 
 def enrich_with_sudoc(
