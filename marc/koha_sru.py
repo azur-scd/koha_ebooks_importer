@@ -59,16 +59,8 @@ from marc.reader import MarcField, MarcRecord
 # Configuration
 # ---------------------------------------------------------------------------
 
-# URL de base du serveur SRU Koha (configurable dans config.py)
-try:
-    from config import KOHA_SRU_BASE_URL, KOHA_TEST_SRU_BASE_URL
-except ImportError:
-    KOHA_SRU_BASE_URL = (
-        "https://catalogue-bu-univ-cotedazur.biblibre.fr/biblios"
-    )
-    KOHA_TEST_SRU_BASE_URL = (
-        "https://catalogue-bu-cotedazur-koha.test.biblibre.eu/biblios"
-    )
+# URL de base du serveur SRU Koha (importée depuis config.py)
+from config import KOHA_SRU_BASE_URL, KOHA_TEST_SRU_BASE_URL
 
 KOHA_SRU_TIMEOUT      = 15   # secondes
 KOHA_SRU_MAX_RECORDS  = 10   # nombre maximum de notices demandées par requête
