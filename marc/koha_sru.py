@@ -46,12 +46,21 @@ Pour étendre :
 
 from __future__ import annotations
 
-import urllib.error
+import time
 import urllib.parse
-import urllib.request
 from dataclasses import dataclass, field
 from typing import List, Optional
 from xml.etree import ElementTree as ET
+
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    import urllib.error
+    import urllib.request
 
 from marc.reader import MarcField, MarcRecord
 
@@ -64,6 +73,8 @@ from config import KOHA_SRU_BASE_URL, KOHA_TEST_SRU_BASE_URL
 
 KOHA_SRU_TIMEOUT      = 15   # secondes
 KOHA_SRU_MAX_RECORDS  = 10   # nombre maximum de notices demandées par requête
+KOHA_SRU_RETRY_COUNT  = 3    # nombre de tentatives en cas d'échec
+KOHA_SRU_RETRY_DELAY  = 1    # délai entre les tentatives (secondes)
 
 # Valeurs de filtrage par défaut
 KOHA_FILTER_099T = "LIVRE_EL"           # 099$t : type de document (requis)
@@ -76,6 +87,42 @@ _NS = {
     "zs":   _NS_SRU,
     "marc": _NS_MARC,
 }
+
+# En-têtes HTTP pour contourner les protections WAF
+_HTTP_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/xml, text/xml, */*",
+    "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+}
+
+# Session requests globale (réutilisée pour les connexions persistantes)
+_SESSION = None
+
+def _get_session():
+    """Retourne une session requests configurée avec retry logic."""
+    global _SESSION
+    if _SESSION is None and REQUESTS_AVAILABLE:
+        _SESSION = requests.Session()
+        
+        # Configurer les retries
+        retry_strategy = Retry(
+            total=KOHA_SRU_RETRY_COUNT,
+            backoff_factor=KOHA_SRU_RETRY_DELAY,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        _SESSION.mount("http://", adapter)
+        _SESSION.mount("https://", adapter)
+        
+        # Appliquer les en-têtes par défaut
+        _SESSION.headers.update(_HTTP_HEADERS)
+    
+    return _SESSION
 
 
 # ---------------------------------------------------------------------------
@@ -164,25 +211,22 @@ def search_koha_by_ean(
     print(f"[SRU] URL complète: {url}")
 
     # Requête HTTP
+    raw = None
     try:
         print(f"[SRU] Envoi de la requête...")
-        req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "KohaEbookManager/1.0 (SRU search)"},
-        )
-        with urllib.request.urlopen(req, timeout=KOHA_SRU_TIMEOUT) as resp:
-            raw = resp.read()
+        if REQUESTS_AVAILABLE:
+            raw = _fetch_with_requests(url)
+        else:
+            raw = _fetch_with_urllib(url)
+        
+        if raw is None:
+            result.error = "Impossible de récupérer la réponse"
+            print(f"[SRU] ❌ {result.error}")
+            return result
+            
         print(f"[SRU] ✅ Réponse reçue: {len(raw)} bytes")
         raw_text = raw.decode("utf-8", errors="replace")
         print(f"[SRU] Contenu brut de la réponse:\n{raw_text}")
-    except urllib.error.HTTPError as exc:
-        result.error = f"HTTP {exc.code} {exc.reason}"
-        print(f"[SRU] ❌ Erreur HTTP: {result.error}")
-        return result
-    except urllib.error.URLError as exc:
-        result.error = f"Erreur réseau : {exc.reason}"
-        print(f"[SRU] ❌ Erreur réseau: {result.error}")
-        return result
     except Exception as exc:
         result.error = f"Erreur inattendue : {exc}"
         print(f"[SRU] ❌ Erreur inattendue: {result.error}")
@@ -287,6 +331,42 @@ def search_koha_by_ean(
     print(f"[SRU] ────────────────────────────────────────────────────────\n")
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Fonctions de requête HTTP
+# ---------------------------------------------------------------------------
+
+def _fetch_with_requests(url: str) -> Optional[bytes]:
+    """Récupère l'URL avec la bibliothèque requests (recommandé)."""
+    session = _get_session()
+    if session is None:
+        return None
+    
+    try:
+        resp = session.get(url, timeout=KOHA_SRU_TIMEOUT)
+        resp.raise_for_status()
+        return resp.content
+    except requests.exceptions.RequestException as exc:
+        print(f"[SRU] ❌ Erreur requests: {exc}")
+        return None
+
+
+def _fetch_with_urllib(url: str) -> Optional[bytes]:
+    """Fallback : récupère l'URL avec urllib (moins robuste face aux WAF)."""
+    try:
+        req = urllib.request.Request(
+            url,
+            headers=_HTTP_HEADERS,
+        )
+        with urllib.request.urlopen(req, timeout=KOHA_SRU_TIMEOUT) as resp:
+            return resp.read()
+    except urllib.error.HTTPError as exc:
+        print(f"[SRU] ❌ Erreur HTTP: {exc.code} {exc.reason}")
+        return None
+    except urllib.error.URLError as exc:
+        print(f"[SRU] ❌ Erreur réseau: {exc.reason}")
+        return None
 
 
 # ---------------------------------------------------------------------------
