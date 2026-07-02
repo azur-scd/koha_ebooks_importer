@@ -5,7 +5,7 @@ app.py — Contrôleur principal de l'application
 ===============================================
 Orchestre les interactions entre la vue (ui/), la couche MARC (marc/)
 et la couche OAI
-
+ 
 Gestion des états des boutons :
   Démarrage          : seul "Importer" est actif, focus dessus.
   Après import       : "Tout sélect.", "Tout désélect." actifs.
@@ -13,7 +13,7 @@ Gestion des états des boutons :
                        "Exporter" inactif.
   Après préparation  : "Exporter" actif.
   Réinitialiser      : disponible à tout moment, remet l'état initial.
-
+ 
 Pour étendre :
   - Nouvelle action : ajouter _action_xxx() + l'enregistrer dans _build_callbacks().
   - Nouveau format d'export : étendre marc/exporters.EXPORTERS.
@@ -240,7 +240,10 @@ class KohaEbookApp:
             messagebox.showwarning("Rien à exporter", MESSAGES["no_prepared"])
             return
         
-        if self._sudoc_enriched:
+        if self._koha_records:
+            notices_exportees = self._koha_records
+            niveau_enrichissement = "notices UNIMARC BOOD enrichies par OAI, par le Sudoc et par la recherche Koha"
+        elif self._sudoc_enriched:
             notices_exportees = self._sudoc_enriched
             niveau_enrichissement = "notices UNIMARC BOOD enrichies par OAI et par le Sudoc"
         elif self._oai_enriched:
