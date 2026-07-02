@@ -705,7 +705,7 @@ class KohaEbookApp:
 
             self._view.load_koha_records(self._koha_records)
             self._view.set_status(
-                f"Recherche Koha terminée : {report.n_updated} 001 mis à jour "
+                f"Recherche Koha terminée : {report.n_updated} notices trouvées "
                 f"sur {report.n_total} notice(s).",
                 level="success",
             )

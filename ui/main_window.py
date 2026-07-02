@@ -12,7 +12,7 @@ Assemble :
         Onglet 2 — "Données OAI-PMH"   : notices Dublin Core collectées.
         Onglet 3 — "Croisement UNIMARC/OAI"  : notices après croisement UNIMARC/OAI.
         Onglet 4 — "Enrichissement Sudoc" : notices après enrichissement Sudoc.
-        Onglet 5 — "Recherche Koha"       : notices après mise à jour 001 Koha.
+        Onglet 5 — "Recherche Koha"       : notices après recherche notice Koha.
   - StatusBar (bas) : message courant et compteur de sélection
 
 Ce module ne contient que la logique de présentation.
@@ -116,8 +116,8 @@ class MainWindow:
             ("prepared", "Préparées",        "0"),
             ("oai",      "Notices OAI",      "0"),
             ("matched",  "Appariées",        "0"),
-            ("sudoc",    "PPN Sudoc",        "0"),
-            ("koha",     "Notices Koha",     "0"),
+            ("sudoc",    "Enrichissement Sudoc",        "0"),
+            ("koha",     "Trouvées Koha",     "0"),
         ]:
             var = tk.StringVar(value=default)
             self._stat_vars[key] = var
@@ -166,8 +166,9 @@ class MainWindow:
         Onglet 2 — "Données OAI-PMH"   : notices Dublin Core collectées.
         Onglet 3 — "Croisement UNIMARC/OAI" : notices après croisement UNIMARC/OAI.
         Onglet 4 — "Enrichissement Sudoc" : notices après enrichissement Sudoc.
-
-        Les onglets 1-4 affichent un placeholder jusqu'au premier chargement.
+        Onglet 5 — "Recherche Koha"       : notices après recherche notice Koha.
+        
+        Les onglets 1-5 affichent un placeholder jusqu'au premier chargement.
         """
         style = ttk.Style()
         style.theme_use("clam")
@@ -309,7 +310,7 @@ class MainWindow:
 
         self._koha_placeholder = tk.Label(
             tab_koha,
-            text="Cliquez sur « Recherche Koha » pour afficher les notices après mise à jour du 001.",
+            text="Cliquez sur « Recherche Koha » pour rechercher les notices déjà présentes dans Koha.",
             bg=COLORS["bg"], fg=COLORS["text_muted"],
             font=("Helvetica", 10, "italic"),
         )

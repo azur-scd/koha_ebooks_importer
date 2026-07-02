@@ -51,7 +51,7 @@ Le traitement suit une chaîne logique en plusieurs étapes :
    Récupération des données SUDOC à partir de l'ISBN et enrichissement des notices, lorsqu'une notice SUDOC est trouvée. L'application privilégie les notices de documents physiques, et à défaut utilise les notices d'ebook. L'intérêt principal est de récupérer le résumé Sudoc, la table des matières, l'indexation sujet, les formes normalisées des auteurs.
    
 8. **Recherche des notices Koha**  
-   Vérifie si les notices sont déjà dans Koha (dans le cas d'une mise à jour) : interroge Koha par SRU en se basant sur l'EAN
+   Vérifie si les notices sont déjà dans Koha (dans le cas d'une mise à jour) : interroge Koha par SRU en se basant sur l'EAN. Si la notice est dans Koha le biblionumber est importé dans le champ 001 des notices à importer, pour permettre un écrasement
    
 9. **Export en MARCXML**  
    Export des notices en MARCXML, prêtes à être importées dans Koha
