@@ -716,6 +716,9 @@ class KohaEbookApp:
             self._view.set_button_enabled("sudoc_enrich", True)
             self._view.set_button_enabled("koha_search",  True)
 
+            n_koha_found = sum(d.n_found for d in report.details)
+            self._view.update_stat("koha", n_koha_found)
+
             lines = report.summary_lines()
             lines.append("")
             lines.append("Voulez-vous télécharger le rapport détaillé ?")
@@ -793,6 +796,7 @@ class KohaEbookApp:
         self._view.update_stat("prepared", 0)
         self._view.update_stat("matched",  0)
         self._view.update_stat("sudoc",    0)
+        self._view.update_stat("koha",     0)
         self._view.set_state("En attente", color=COLORS["accent"])
         self._view.set_status(MESSAGES["reset_done"], level="idle")
         self._view.set_counts(0, 0)
