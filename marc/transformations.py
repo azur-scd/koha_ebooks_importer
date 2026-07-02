@@ -817,11 +817,16 @@ def add_zone_995(
 
     Code-barres ($f) : <BARCODE_PREFIX> + <073$a>
     
-    Si le champ 073$a est absent, revient au format par défaut:
-    <BARCODE_PREFIX> + <AAMMJJHHmmss> + <ordre 4 chiffres>
+    Vérification de longueur : Si le code-barres dépasse 21 caractères,
+    utilise la méthode alternative :
+    <BARCODE_PREFIX> + <YYMMDDHHmmss> + <ordre 4 chiffres>
     
-    Exemple (073$a présent) : BOD9782075126655
-    Exemple (073$a absent)  : BOD2606151423590042  (19 caracteres, limite Koha : 20)
+    Exemples :
+    - BOD + EAN court (ex. 13 chiffres)    : BOD9782075126655 (17 chars) ✓
+    - BOD + EAN long                        : BOD + long EAN > 21 chars → basculer
+    - Méthode alternative (BOD + date)     : BOD2606151423590042 (19 chars) ✓
+    
+    Limite Koha : 21 caractères maximum par code-barres.
 
     Sous-zones : $f code-barres, puis toutes les sous-zones de config.ZONE_995,
     et si note_acces est fournie, un $z avec cette note.
@@ -840,11 +845,16 @@ def add_zone_995(
     # Chercher le contenu de 073$a (EAN)
     ean = record.get_value("073", "a")
     
+    barcode = None
     if ean and ean.strip():
-        # Si 073$a existe et n'est pas vide, l'utiliser directement
-        barcode = f"{BARCODE_PREFIX}{ean.strip()}"
-    else:
-        # Sinon, revenir au format par défaut avec timestamp
+        # Construire le code-barres avec EAN
+        candidate = f"{BARCODE_PREFIX}{ean.strip()}"
+        # Vérifier la longueur
+        if len(candidate) <= 21:
+            barcode = candidate
+    
+    # Si EAN absent, trop long, ou si première tentative a échoué : utiliser la méthode alternative
+    if barcode is None:
         barcode = f"{BARCODE_PREFIX}{timestamp.strftime('%y%m%d%H%M%S')}{order_index:04d}"
 
     field = MarcField(tag="995", ind1=" ", ind2=" ")
