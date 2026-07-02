@@ -117,6 +117,7 @@ class MainWindow:
             ("oai",      "Notices OAI",      "0"),
             ("matched",  "Appariées",        "0"),
             ("sudoc",    "PPN Sudoc",        "0"),
+            ("koha",     "Notices Koha",     "0"),
         ]:
             var = tk.StringVar(value=default)
             self._stat_vars[key] = var
